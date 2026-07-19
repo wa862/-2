@@ -95,8 +95,8 @@ let serviceListPromise: Promise<void> | null = null
 const router = useRouter()
 const userStore = useUserStore()
 
-onMounted(async () => {
-  await ensureServiceList()
+onMounted(() => {
+  ensureServiceList()
 })
 
 function ensureServiceList() {

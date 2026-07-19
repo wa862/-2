@@ -90,20 +90,6 @@
         </view>
       </view>
 
-      <view class="coupon-card">
-        <view class="coupon-main">
-          <text class="coupon-icon">券</text>
-          <view>
-            <text class="coupon-title">优惠券</text>
-            <text class="coupon-desc">登录后领取更多优惠</text>
-          </view>
-        </view>
-        <view class="coupon-action">
-          <text>去领取</text>
-          <text class="arrow small">›</text>
-        </view>
-      </view>
-
       <view class="remark-card">
         <view class="remark-main">
           <text class="remark-icon">▤</text>
@@ -337,7 +323,6 @@ function syncSelectedStore() {
 
 .top-card,
 .group-card,
-.coupon-card,
 .footer {
   border-radius: 20rpx;
   background: #fff;
@@ -595,58 +580,16 @@ function syncSelectedStore() {
   font-size: 28rpx;
 }
 
-.coupon-card {
-  margin-bottom: 24rpx;
-  padding: 24rpx 28rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(90deg, #fff8ec, #fffdf8);
-}
-
-.coupon-main,
-.coupon-action,
 .remark-main {
   display: flex;
   align-items: center;
 }
 
-.coupon-main {
-  gap: 18rpx;
-}
-
-.coupon-icon {
-  width: 54rpx;
-  height: 54rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 14rpx;
-  color: #fff;
-  background: linear-gradient(135deg, #ffb258, #ff8a2a);
-  font-size: 26rpx;
-  font-weight: 800;
-}
-
-.coupon-title,
 .remark-title {
   display: block;
   color: #111827;
   font-size: 30rpx;
   font-weight: 700;
-}
-
-.coupon-desc {
-  display: block;
-  margin-top: 4rpx;
-  color: #8b95a5;
-  font-size: 24rpx;
-}
-
-.coupon-action {
-  gap: 4rpx;
-  color: #b37a45;
-  font-size: 28rpx;
 }
 
 .remark-card {
