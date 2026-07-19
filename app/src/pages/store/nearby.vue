@@ -3,23 +3,59 @@
     <view class="search-card">
       <view class="search-box">
         <text class="search-icon">⌕</text>
-        <input v-model="keyword" class="search-input" placeholder="搜索附近：干洗店 / 洗衣店 / 商圈" confirm-type="search" />
+        <input
+          v-model="keyword"
+          class="search-input"
+          placeholder="搜索附近：干洗店 / 洗衣店 / 商圈"
+          confirm-type="search"
+          @confirm="chooseNearbyArea"
+        />
       </view>
-      <button class="map-btn" @click="chooseNearbyArea">地图选店</button>
+      <button class="map-btn" @click="chooseNearbyArea">地图搜索</button>
     </view>
 
     <view class="hint-card">
       <view>
         <text class="hint-title">附近干洗店</text>
         <text class="hint-desc">
-          {{ selectedAreaText || '可通过地图搜索附近干洗店，再从平台门店中选择下单门店' }}
+          {{ selectedAreaText || '先定位当前位置，再通过地图搜索附近干洗店' }}
         </text>
       </view>
-      <button class="refresh-btn" :loading="loading" @click="loadStores">刷新</button>
+      <button class="refresh-btn" :loading="locating" @click="locateUser">定位</button>
+    </view>
+
+    <view class="map-card">
+      <map
+        v-if="mapReady"
+        class="map"
+        :latitude="mapCenter.latitude"
+        :longitude="mapCenter.longitude"
+        :markers="mapMarkers"
+        scale="14"
+        show-location
+      />
+      <view v-else class="map-empty" @click="locateUser">
+        <text>点击定位当前位置</text>
+      </view>
+    </view>
+
+    <view v-if="nearbyStore" class="card selected-card">
+      <text class="section-title">地图搜索结果</text>
+      <view class="store-item">
+        <view class="info">
+          <text class="name">{{ nearbyStore.name }}</text>
+          <text class="addr">{{ nearbyStore.address || '地图选点地址' }}</text>
+        </view>
+        <button class="select-btn" @click="selectNearbyStore">选择该门店</button>
+      </view>
+      <text class="match-tip">会自动匹配平台门店用于下单，页面展示地图中选中的门店名称和地址。</text>
     </view>
 
     <view class="card">
-      <text class="section-title">可选择门店</text>
+      <view class="section-row">
+        <text class="section-title">平台下单门店</text>
+        <button class="tiny-btn" :loading="loading" @click="loadStores">刷新</button>
+      </view>
       <view v-if="!filteredStores.length" class="empty-wrap">暂无匹配门店，请换个关键词试试</view>
       <view v-for="s in filteredStores" :key="s.id" class="store-item">
         <view class="info">
@@ -41,8 +77,12 @@ import { getStoreList, type StoreItem } from '@/api/store'
 
 const storeList = ref<StoreItem[]>([])
 const loading = ref(false)
+const locating = ref(false)
 const keyword = ref('')
 const selectedAreaText = ref('')
+const nearbyStore = ref<{ name: string; address: string; latitude: number; longitude: number } | null>(null)
+const mapCenter = ref({ latitude: 39.908823, longitude: 116.39747 })
+const mapReady = ref(false)
 const from = ref('')
 const serviceId = ref('')
 const specName = ref('')
@@ -70,10 +110,36 @@ onLoad((q) => {
 const filteredStores = computed(() => {
   const kw = keyword.value.trim()
   if (!kw) return storeList.value
+  if (isMapSearchKeyword(kw)) return storeList.value
   return storeList.value.filter((s) => {
     const text = `${s.name || ''} ${s.address || ''} ${s.phone || ''}`
     return text.includes(kw)
   })
+})
+
+const mapMarkers = computed(() => {
+  const markers: any[] = []
+  markers.push({
+    id: 1,
+    latitude: mapCenter.value.latitude,
+    longitude: mapCenter.value.longitude,
+    title: '当前位置',
+    iconPath: '/static/tab/store-active.png',
+    width: 28,
+    height: 28,
+  })
+  if (nearbyStore.value) {
+    markers.push({
+      id: 2,
+      latitude: nearbyStore.value.latitude,
+      longitude: nearbyStore.value.longitude,
+      title: nearbyStore.value.name,
+      iconPath: '/static/tab/service-active.png',
+      width: 32,
+      height: 32,
+    })
+  }
+  return markers
 })
 
 function selectStore(s: StoreItem, displayName?: string, displayAddress?: string) {
@@ -122,28 +188,79 @@ function selectStore(s: StoreItem, displayName?: string, displayAddress?: string
 }
 
 function chooseNearbyArea() {
+  const searchKeyword = keyword.value.trim() || '干洗店'
   uni.chooseLocation({
-    keyword: '干洗店',
+    keyword: searchKeyword,
     success: (res) => {
       const title = (res.name || '').trim()
       const address = (res.address || '').trim()
-      selectedAreaText.value = title || address ? `已定位附近：${title || address}` : '已打开地图选择附近干洗店'
-      keyword.value = extractKeyword(title || address)
-      uni.showToast({ title: '已筛选附近门店', icon: 'success' })
+      nearbyStore.value = {
+        name: title || '附近干洗店',
+        address,
+        latitude: Number(res.latitude) || mapCenter.value.latitude,
+        longitude: Number(res.longitude) || mapCenter.value.longitude,
+      }
+      mapCenter.value = {
+        latitude: nearbyStore.value.latitude,
+        longitude: nearbyStore.value.longitude,
+      }
+      mapReady.value = true
+      selectedAreaText.value = title || address ? `已选择附近：${title || address}` : '已打开地图选择附近干洗店'
+      uni.showToast({ title: '已搜索附近干洗店', icon: 'success' })
     },
     fail: () => uni.showToast({ title: '选点取消', icon: 'none' }),
   })
 }
 
-function extractKeyword(text: string) {
-  const match = storeList.value.find((s) => {
-    const name = s.name || ''
-    const address = s.address || ''
-    return (name && text.includes(name)) || (address && text.includes(address))
+function isMapSearchKeyword(kw: string) {
+  return ['干洗店', '洗衣店', '干洗', '洗衣', '附近干洗店', '附近洗衣店'].includes(kw)
+}
+
+function locateUser() {
+  locating.value = true
+  uni.getLocation({
+    type: 'gcj02',
+    success: (res) => {
+      mapCenter.value = {
+        latitude: res.latitude,
+        longitude: res.longitude,
+      }
+      mapReady.value = true
+      selectedAreaText.value = '已定位当前位置，可点击“地图搜索”查找附近干洗店'
+      uni.showToast({ title: '定位成功', icon: 'success' })
+    },
+    fail: () => {
+      uni.showModal({
+        title: '定位失败',
+        content: '请在小程序设置中允许使用位置信息，或直接点击“地图搜索”手动选择附近干洗店。',
+        confirmText: '去设置',
+        success: (res) => {
+          if (res.confirm) uni.openSetting()
+        },
+      })
+    },
+    complete: () => {
+      locating.value = false
+    },
   })
-  if (match) return match.name
-  const district = text.match(/([\u4e00-\u9fa5]{2,8}(区|县|市|镇|街道))/)
-  return district ? district[1] : ''
+}
+
+function selectNearbyStore() {
+  if (!nearbyStore.value) return
+  const title = nearbyStore.value.name || ''
+  const address = nearbyStore.value.address || ''
+  const matched = storeList.value.find((s) => {
+    const name = s.name || ''
+    const addr = s.address || ''
+    return (name && (title.includes(name) || name.includes(title))) ||
+      (addr && address && (address.includes(addr) || addr.includes(address)))
+  })
+  const target = matched || storeList.value[0]
+  if (!target) {
+    uni.showToast({ title: '暂无平台门店，请先在管理端添加门店', icon: 'none' })
+    return
+  }
+  selectStore(target, title || target.name, address || target.address || '')
 }
 
 async function loadStores() {
@@ -158,6 +275,7 @@ async function loadStores() {
 }
 
 onMounted(loadStores)
+onMounted(locateUser)
 </script>
 
 <style scoped lang="scss">
@@ -231,6 +349,49 @@ onMounted(loadStores)
   gap: 16rpx;
 }
 
+.map-card {
+  margin-bottom: 22rpx;
+  border-radius: 22rpx;
+  background: #fff;
+  box-shadow: 0 14rpx 38rpx rgba(31, 89, 154, 0.08);
+  overflow: hidden;
+}
+
+.map,
+.map-empty {
+  width: 100%;
+  height: 360rpx;
+}
+
+.map-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 28rpx;
+  background: linear-gradient(135deg, #edf5ff, #f8fbff);
+}
+
+.selected-card {
+  border: 2rpx solid #409eff;
+  background: #f7fbff;
+}
+
+.match-tip {
+  display: block;
+  margin: 0 0 18rpx;
+  color: #6b7280;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.section-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14rpx;
+}
+
 .hint-title {
   display: block;
   color: #111827;
@@ -256,13 +417,22 @@ onMounted(loadStores)
   font-size: 24rpx;
 }
 
+.tiny-btn {
+  width: 104rpx;
+  height: 54rpx;
+  line-height: 54rpx;
+  border-radius: 999rpx;
+  color: #2474ff;
+  background: #eef5ff;
+  font-size: 23rpx;
+}
+
 .card {
   padding: 28rpx 28rpx 8rpx;
 }
 
 .section-title {
   display: block;
-  margin-bottom: 14rpx;
   color: #111827;
   font-size: 34rpx;
   font-weight: 800;
