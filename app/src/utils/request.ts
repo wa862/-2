@@ -1,4 +1,6 @@
-import { BASE_URL, TOKEN_KEY } from '@/config'
+import { API_FALLBACK_URLS, BASE_URL, TOKEN_KEY } from '@/config'
+
+const API_BASE_URLS: string[] = API_FALLBACK_URLS.length ? API_FALLBACK_URLS : [BASE_URL]
 
 interface RequestOptions {
   url: string
@@ -8,24 +10,25 @@ interface RequestOptions {
   params?: Record<string, string | number | boolean | undefined | null>
 }
 
-function buildUrl(url: string, params?: RequestOptions['params']) {
-  if (!params) return BASE_URL + url
+function buildUrl(baseUrl: string, url: string, params?: RequestOptions['params']) {
+  if (!params) return baseUrl + url
   const qs = Object.entries(params)
     .filter(([, v]) => v !== undefined && v !== null)
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
     .join('&')
-  return qs ? `${BASE_URL}${url}?${qs}` : BASE_URL + url
+  return qs ? `${baseUrl}${url}?${qs}` : baseUrl + url
 }
 
 export function request<T = unknown>(options: RequestOptions): Promise<T> {
   const token = uni.getStorageSync(TOKEN_KEY)
-  const fullUrl = buildUrl(options.url, options.params)
-  return new Promise((resolve, reject) => {
+  const tryRequest = (index: number): Promise<T> => new Promise((resolve, reject) => {
+    const baseUrl = API_BASE_URLS[index] || BASE_URL
+    const fullUrl = buildUrl(baseUrl, options.url, options.params)
     uni.request({
       url: fullUrl,
       method: options.method || 'GET',
       data: options.data as UniApp.RequestOptions['data'],
-      timeout: 15000,
+      timeout: 8000,
       header: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -52,10 +55,15 @@ export function request<T = unknown>(options: RequestOptions): Promise<T> {
       },
       fail: (err) => {
         console.error('[request fail]', fullUrl, err)
+        if (index < API_BASE_URLS.length - 1) {
+          tryRequest(index + 1).then(resolve).catch(reject)
+          return
+        }
         reject(new Error('网络请求失败，请确认后端已启动且地址配置正确'))
       },
     })
   })
+  return tryRequest(0)
 }
 
 export function uploadFile<T = unknown>(url: string, filePath: string, name = 'file'): Promise<T> {

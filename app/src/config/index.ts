@@ -12,5 +12,12 @@ export const BASE_URL = '/api'
 export const BASE_URL = 'http://10.129.136.243:8080/api'
 // #endif
 
+export const API_FALLBACK_URLS = [
+  BASE_URL,
+  // #ifndef H5
+  'http://127.0.0.1:8080/api',
+  // #endif
+]
+
 export const TOKEN_KEY = 'token'
 export const USER_KEY = 'user_info'
