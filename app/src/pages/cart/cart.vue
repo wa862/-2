@@ -124,6 +124,11 @@
     <view v-if="showAddressPicker" class="mask" @click="showAddressPicker=false">
       <view class="dialog" @click.stop>
         <text class="dialog-title">选择地址</text>
+        <view class="add-address" @click="goAddAddress">
+          <text class="add-icon">＋</text>
+          <text>新增地址</text>
+        </view>
+        <view v-if="!addressList.length" class="pick-empty">暂无地址，请先新增收货地址</view>
         <view v-for="a in addressList" :key="a.id" class="pick-item" @click="selectAddress(a.id)">
           <text class="pick-title">{{ a.contactName }} {{ a.phone }}</text>
           <text class="pick-desc">{{ fullAddress(a) }}</text>
@@ -245,6 +250,11 @@ async function remove(id: number) {
 
 function goNearbyStore() {
   uni.navigateTo({ url: '/pages/store/nearby?from=cart' })
+}
+
+function goAddAddress() {
+  showAddressPicker.value = false
+  uni.navigateTo({ url: '/pages/profile/address' })
 }
 
 function goCheckout() {
@@ -717,6 +727,40 @@ function syncSelectedStore() {
   margin-bottom: 18rpx;
   font-size: 34rpx;
   font-weight: 800;
+}
+
+.add-address {
+  height: 88rpx;
+  margin-bottom: 10rpx;
+  padding: 0 22rpx;
+  border-radius: 18rpx;
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  color: #2474ff;
+  background: #eef5ff;
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
+.add-icon {
+  width: 42rpx;
+  height: 42rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: #2474ff;
+  font-size: 30rpx;
+  line-height: 42rpx;
+}
+
+.pick-empty {
+  padding: 34rpx 0;
+  color: #8b95a5;
+  text-align: center;
+  font-size: 28rpx;
 }
 
 .pick-item {
