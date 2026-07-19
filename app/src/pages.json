@@ -1,0 +1,67 @@
+{
+  "pages": [
+    { "path": "pages/index/index", "style": { "navigationBarTitleText": "洗衣优选" } },
+    { "path": "pages/login/login", "style": { "navigationBarTitleText": "登录" } },
+    { "path": "pages/register/register", "style": { "navigationBarTitleText": "注册" } },
+    { "path": "pages/service/list", "style": { "navigationBarTitleText": "干洗服务" } },
+    { "path": "pages/service/detail", "style": { "navigationBarTitleText": "服务详情" } },
+    { "path": "pages/service/order-create", "style": { "navigationBarTitleText": "预约下单" } },
+    { "path": "pages/product/list", "style": { "navigationBarTitleText": "商品商城" } },
+    { "path": "pages/product/detail", "style": { "navigationBarTitleText": "商品详情" } },
+    { "path": "pages/cart/cart", "style": { "navigationBarTitleText": "购物车" } },
+    { "path": "pages/checkout/checkout", "style": { "navigationBarTitleText": "确认订单" } },
+    { "path": "pages/store/nearby", "style": { "navigationBarTitleText": "附近门店" } },
+    { "path": "pages/ai/assistant", "style": { "navigationBarTitleText": "AI客服" } },
+    { "path": "pages/order/list", "style": { "navigationBarTitleText": "我的订单" } },
+    { "path": "pages/order/pay", "style": { "navigationBarTitleText": "收银台" } },
+    { "path": "pages/comment/list", "style": { "navigationBarTitleText": "用户评价" } },
+    { "path": "pages/profile/profile", "style": { "navigationBarTitleText": "个人中心" } },
+    { "path": "pages/profile/info", "style": { "navigationBarTitleText": "个人信息" } },
+    { "path": "pages/profile/password", "style": { "navigationBarTitleText": "修改密码" } },
+    { "path": "pages/profile/address", "style": { "navigationBarTitleText": "取送地址" } }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "洗衣优选",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f5f7fa"
+  },
+  "tabBar": {
+    "color": "#909399",
+    "selectedColor": "#2474ff",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "static/tab/home.png",
+        "selectedIconPath": "static/tab/home-active.png"
+      },
+      {
+        "pagePath": "pages/product/list",
+        "text": "分类",
+        "iconPath": "static/tab/mall.png",
+        "selectedIconPath": "static/tab/mall-active.png"
+      },
+      {
+        "pagePath": "pages/service/list",
+        "text": "干洗服务",
+        "iconPath": "static/tab/service.png",
+        "selectedIconPath": "static/tab/service-active.png"
+      },
+      {
+        "pagePath": "pages/cart/cart",
+        "text": "购物车",
+        "iconPath": "static/tab/cart.png",
+        "selectedIconPath": "static/tab/cart-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "static/tab/profile.png",
+        "selectedIconPath": "static/tab/profile-active.png"
+      }
+    ]
+  }
+}

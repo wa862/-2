@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="320" viewBox="0 0 1600 320">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fff4dc"/>
+      <stop offset=".48" stop-color="#fff9ee"/>
+      <stop offset="1" stop-color="#d6e8d2"/>
+    </linearGradient>
+    <linearGradient id="orange" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff9f2f"/>
+      <stop offset="1" stop-color="#ff6f1a"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2f8bff"/>
+      <stop offset="1" stop-color="#1767df"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="11" stdDeviation="13" flood-color="#926229" flood-opacity=".2"/>
+    </filter>
+  </defs>
+  <rect width="1600" height="320" fill="url(#bg)"/>
+  <path d="M840 250c102-89 201-143 346-105 89 24 184 12 318-42v217H840z" fill="#d6e4ce" opacity=".55"/>
+  <g transform="translate(1020 26)" filter="url(#shadow)">
+    <rect x="230" y="92" width="265" height="130" rx="8" fill="#f6fbff"/>
+    <rect x="320" y="48" width="142" height="70" rx="8" fill="#e8f3ff"/>
+    <path d="M230 133h310l48 89H230z" fill="#e8eef5"/>
+    <circle cx="291" cy="238" r="28" fill="#2d3748"/>
+    <circle cx="476" cy="238" r="28" fill="#2d3748"/>
+    <rect x="350" y="138" width="132" height="54" rx="8" fill="#fff"/>
+    <text x="416" y="176" text-anchor="middle" font-family="Microsoft YaHei, PingFang SC, Arial" font-size="27" font-weight="900" fill="#1b69d8">上门取送</text>
+    <g transform="translate(6 8)">
+      <circle cx="92" cy="68" r="44" fill="#ffd6b8"/>
+      <path d="M54 126h92c22 0 40 18 40 40v82H14v-82c0-22 18-40 40-40z" fill="#ffe5d1"/>
+      <path d="M158 160c-20 17-37 26-58 25" fill="none" stroke="#ecc0a4" stroke-width="8" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(142 2)">
+      <circle cx="72" cy="54" r="42" fill="#ffd0a6"/>
+      <rect x="28" y="98" width="88" height="138" rx="34" fill="#0a71de"/>
+      <rect x="28" y="120" width="88" height="68" rx="10" fill="#117bf0"/>
+      <path d="M86 112l-18 44h46z" fill="#fff" opacity=".22"/>
+      <path d="M44 122l52 5" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".55"/>
+      <path d="M107 98c21 15 38 40 47 75" stroke="#0a71de" stroke-width="16" stroke-linecap="round"/>
+      <path d="M158 172l-48 24" stroke="#0a71de" stroke-width="16" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(214 86)">
+      <path d="M66 3h128c28 0 51 23 51 51v154c0 28-23 51-51 51H66c-28 0-51-23-51-51V54C15 26 38 3 66 3z" fill="url(#blue)"/>
+      <circle cx="130" cy="92" r="36" fill="#fff" opacity=".18"/>
+      <path d="M86 122h92l-18 82H104z" fill="#fff" opacity=".25"/>
+      <text x="130" y="155" text-anchor="middle" font-family="Microsoft YaHei, PingFang SC, Arial" font-size="33" font-weight="900" fill="#fff">干洗服务</text>
+      <text x="130" y="191" text-anchor="middle" font-family="Microsoft YaHei, PingFang SC, Arial" font-size="19" font-weight="700" fill="#e7f2ff">专业上门洗护</text>
+    </g>
+  </g>
+  <g font-family="Microsoft YaHei, PingFang SC, Arial">
+    <text x="66" y="94" font-size="58" font-weight="900" fill="#ff7e22">一键下单</text>
+    <text x="304" y="94" font-size="58" font-weight="900" fill="#e56211">上门取送</text>
+    <rect x="66" y="116" width="390" height="48" rx="24" fill="url(#orange)"/>
+    <text x="96" y="151" font-size="29" font-weight="800" fill="#fff">足不出户 · 轻松享受 · 省时省力</text>
+  </g>
+  <g transform="translate(48 202)" font-family="Microsoft YaHei, PingFang SC, Arial" font-size="24" fill="#5d3a1e">
+    <rect width="710" height="82" rx="18" fill="#fff" opacity=".82"/>
+    <g transform="translate(35 15)"><path d="M17 4h34v50H17z" fill="none" stroke="#ff7e22" stroke-width="5"/><text x="70" y="22">在线下单</text><text x="70" y="52">方便快捷</text></g>
+    <g transform="translate(225 15)"><circle cx="28" cy="29" r="25" fill="none" stroke="#ff7e22" stroke-width="5"/><path d="M28 12v19l14 10" fill="none" stroke="#ff7e22" stroke-width="5" stroke-linecap="round"/><text x="72" y="22">准时取送</text><text x="72" y="52">省时省心</text></g>
+    <g transform="translate(415 15)"><path d="M9 18l33-14 33 14v36L42 68 9 54z" fill="none" stroke="#ff7e22" stroke-width="5"/><text x="90" y="22">专业洗护</text><text x="90" y="52">品质保障</text></g>
+    <g transform="translate(590 15)"><path d="M10 12l28-10 28 10v20c0 17-12 29-28 35-16-6-28-18-28-35z" fill="none" stroke="#ff7e22" stroke-width="5"/><text x="82" y="22">安全服务</text><text x="82" y="52">放心贴心</text></g>
+  </g>
+</svg>

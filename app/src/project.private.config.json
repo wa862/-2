@@ -1,0 +1,12 @@
+{
+  "description": "本地私有配置，可覆盖微信开发者工具本地缓存设置",
+  "projectname": "洗衣优选",
+  "setting": {
+    "urlCheck": false,
+    "es6": false,
+    "enhance": false,
+    "minified": false,
+    "compileHotReLoad": true
+  },
+  "libVersion": "3.5.5"
+}

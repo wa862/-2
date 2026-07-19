@@ -1,0 +1,50 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: dry-clean-mall
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/dry_clean_mall?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:20060128}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+    open-in-view: false
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:
+      database: 0
+
+jwt:
+  secret: ${JWT_SECRET:dry-clean-mall-secret-key-change-in-production-32bytes}
+  expire-hours: 24
+
+captcha:
+  prefix: "captcha:"
+  expire-seconds: 300
+
+openai:
+  api-key: ${OPENAI_API_KEY:}
+  api-url: ${OPENAI_API_URL:https://api.openai.com/v1/responses}
+  model: ${OPENAI_MODEL:gpt-5}
+
+zhipu:
+  api-key: ${ZHIPU_API_KEY:}
+  api-url: ${ZHIPU_API_URL:https://open.bigmodel.cn/api/paas/v4/chat/completions}
+  model: ${ZHIPU_MODEL:glm-4-flash}
