@@ -337,37 +337,36 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.service-page { padding: 8px 0 24px; }
+.service-page { padding: 6px 0 16px; }
 .section {
   background: #ffffff;
-  border-radius: 12px;
-  padding: 18px 20px 20px;
-  margin-bottom: 16px;
+  border-radius: 8px;
+  padding: 12px 16px 14px;
+  margin-bottom: 12px;
 }
-.section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; justify-content: space-between; }
-.section-title { font-size: 22px; color: #303133; }
-.keyword-tip { font-size: 18px; color: #909399; }
-.section-search { width: 320px; }
-.main-layout { display: flex; gap: 24px; }
+.section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; justify-content: space-between; }
+.section-title { font-size: 16px; color: #303133; }
+.keyword-tip { font-size: 13px; color: #909399; }
+.section-search { width: 240px; }
+.main-layout { display: flex; gap: 16px; }
 .main-left {
-  width: 220px;
+  width: 160px;
   border-right: 1px solid #f0f0f0;
-  padding-right: 16px;
+  padding-right: 12px;
   position: sticky;
-  /* 顶部预留一段距离，避免被导航栏遮挡 */
-  top: 80px;
+  top: 60px;
   align-self: flex-start;
   background: #ffffff;
   z-index: 1;
 }
-.main-right { flex: 1; padding-left: 8px; }
-.small-title { font-size: 22px; margin-bottom: 8px; }
-.category-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.main-right { flex: 1; padding-left: 6px; }
+.small-title { font-size: 16px; margin-bottom: 6px; }
+.category-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .category-vertical { flex-direction: column; }
 .category-item {
   cursor: pointer;
-  padding: 8px 16px;
-  font-size: 19px;
+  padding: 6px 12px;
+  font-size: 13px;
   color: #606266;
   background: #ffffff;
   border: 1px solid #dcdfe6;
@@ -377,25 +376,24 @@ onMounted(async () => {
 .category-item.active { background: #409eff; color: #fff; border-color: #409eff; }
 .category-item:hover { border-color: #409eff; color: #409eff; }
 
-/* 生活美学卡片 */
 .aesthetic-card {
   position: relative;
-  margin-top: 12px;
-  border-radius: 12px;
+  margin-top: 8px;
+  border-radius: 8px;
   overflow: hidden;
   background: #fff;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   cursor: pointer;
   transition: all 0.25s ease;
 }
 .aesthetic-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
 }
 .card-img-wrap {
   position: relative;
   width: 100%;
-  height: 200px;
+  height: 160px;
   overflow: hidden;
   background: #F0E9E2;
 }
@@ -409,10 +407,10 @@ onMounted(async () => {
 .card-img img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .card-img-wrap .hot-badge {
   position: absolute;
-  right: 10px;
-  bottom: 10px;
-  padding: 4px 10px;
-  font-size: 18px;
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 6px;
+  font-size: 12px;
   font-weight: 600;
   color: #fff;
   background: #e74c3c;
@@ -425,68 +423,67 @@ onMounted(async () => {
 .img-shoes { background: linear-gradient(135deg, #2d3748, #4a5568); }
 .img-default { background: linear-gradient(135deg, #409eff, #66b1ff); }
 
-.card-body { padding: 14px 16px 16px; }
-.card-title-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-.card-title { font-size: 20px; font-weight: 600; color: #303133; }
-.card-cert { color: #52c41a; font-size: 18px; font-weight: bold; }
-.card-rating { font-size: 18px; color: #606266; margin-bottom: 6px; }
-.card-review { color: #909399; font-size: 18px; }
-.card-price { font-size: 26px; font-weight: 700; color: #e74c3c; margin-bottom: 2px; }
-.card-member { font-size: 18px; color: #909399; margin-bottom: 10px; }
+.card-body { padding: 10px 12px 12px; }
+.card-title-row { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+.card-title { font-size: 14px; font-weight: 600; color: #303133; }
+.card-cert { color: #52c41a; font-size: 12px; font-weight: bold; }
+.card-rating { font-size: 13px; color: #606266; margin-bottom: 4px; }
+.card-review { color: #909399; font-size: 12px; }
+.card-price { font-size: 18px; font-weight: 700; color: #e74c3c; margin-bottom: 2px; }
+.card-member { font-size: 12px; color: #909399; margin-bottom: 6px; }
 .card-features {
-  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;
 }
 .feature-tag {
-  padding: 6px 12px;
-  font-size: 18px;
+  padding: 3px 8px;
+  font-size: 12px;
   color: #606266;
   background: #f0f2f5;
-  border-radius: 8px;
+  border-radius: 6px;
 }
 .card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
 }
 .card-remark {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 18px;
+  gap: 3px;
+  font-size: 13px;
   color: #909399;
   cursor: pointer;
 }
 .card-remark:hover { color: #409eff; }
-.card-book-btn { flex: 1; border-radius: 20px; font-weight: 500; }
+.card-book-btn { flex: 1; border-radius: 12px; font-weight: 500; }
 .card-cart-float {
   position: absolute;
-  right: 12px;
-  bottom: 12px;
-  width: 40px;
-  height: 40px;
+  right: 8px;
+  bottom: 8px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #fff;
   border-radius: 50%;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   color: #409eff;
   cursor: pointer;
   transition: all 0.2s;
 }
 .card-cart-float:hover { background: #409eff; color: #fff; transform: scale(1.08); }
 
-/* 弹出详情：生活美学 */
-.aesthetic-dialog :deep(.el-dialog__header) { padding: 16px 20px 0; }
-.aesthetic-dialog :deep(.el-dialog__body) { padding: 0 20px 20px; }
-.aesthetic-popup { border-radius: 12px; overflow: hidden; }
+.aesthetic-dialog :deep(.el-dialog__header) { padding: 12px 16px 0; }
+.aesthetic-dialog :deep(.el-dialog__body) { padding: 0 16px 16px; }
+.aesthetic-popup { border-radius: 8px; overflow: hidden; }
 .popup-img-wrap {
   position: relative;
-  height: 240px;
+  height: 180px;
   overflow: hidden;
   background: #F0E9E2;
-  border-radius: 12px 12px 0 0;
+  border-radius: 8px 8px 0 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -495,28 +492,28 @@ onMounted(async () => {
 .popup-img img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .popup-img-wrap .hot-badge {
   position: absolute;
-  right: 10px;
-  bottom: 10px;
-  padding: 4px 10px;
-  font-size: 18px;
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 6px;
+  font-size: 12px;
   font-weight: 600;
   color: #fff;
   background: #e74c3c;
   border-radius: 4px;
 }
-.popup-body { padding: 14px 0 12px; }
-.popup-body .card-title-row { margin-bottom: 6px; }
-.popup-body .card-rating { margin-bottom: 6px; }
+.popup-body { padding: 10px 0 8px; }
+.popup-body .card-title-row { margin-bottom: 4px; }
+.popup-body .card-rating { margin-bottom: 4px; }
 .popup-body .card-price { margin-bottom: 2px; }
-.popup-body .card-member { margin-bottom: 10px; }
-.popup-body .card-features { margin-bottom: 12px; }
-.popup-body .card-footer { margin-bottom: 12px; }
+.popup-body .card-member { margin-bottom: 6px; }
+.popup-body .card-features { margin-bottom: 8px; }
+.popup-body .card-footer { margin-bottom: 8px; }
 .popup-cart-btn {
   width: 100%;
-  border-radius: 20px;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
 }
 </style>

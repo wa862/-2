@@ -50,15 +50,16 @@
         <!-- 干洗服务列表 -->
         <section v-if="serviceList.length" class="block section-card">
           <div class="section-title">干洗服务</div>
-          <div v-for="item in serviceList" :key="item.id" class="item-card">
+          <div v-for="item in serviceList" :key="item.id" class="item-card" @click="goCartItemDetail(item)">
             <div class="item-left">
-              <el-checkbox v-model="selectedMap[item.id]" class="item-check" />
+              <el-checkbox v-model="selectedMap[item.id]" class="item-check" @click.stop />
               <div class="item-icon-wrap">
                 <img v-if="item.image" :src="item.image" :alt="item.name" class="item-icon" />
                 <span v-else class="item-emoji">🧥</span>
               </div>
               <div class="item-body">
                 <div class="item-name">{{ item.name }}</div>
+                <div v-if="item.serviceSpecName" class="spec-tag">{{ item.serviceSpecName }}</div>
                 <div class="item-meta">
                   <span class="item-rating">⭐ {{ getServiceRating(item) }} ({{ getServiceReview(item) }})</span>
                   <span class="item-tag">{{ getServiceTag(item) }}</span>
@@ -66,16 +67,18 @@
                 <div class="item-price-row">
                   <span class="item-price">单价：￥{{ item.price }}/{{ item.unit || '件' }}</span>
                   <div class="item-qty">
-                    <button type="button" class="qty-btn" :disabled="item.quantity <= 1" @click="changeQty(item, -1)">−</button>
+                    <button type="button" class="qty-btn" :disabled="item.quantity <= 1" @click.stop="changeQty(item, -1)">−</button>
                     <span class="qty-num">{{ item.quantity }}</span>
-                    <button type="button" class="qty-btn" :disabled="item.quantity >= 99" @click="changeQty(item, 1)">+</button>
+                    <button type="button" class="qty-btn" :disabled="item.quantity >= 99" @click.stop="changeQty(item, 1)">+</button>
                   </div>
                 </div>
                 <div class="item-features">{{ getServiceFeatures(item) }}</div>
                 <div class="item-subtotal">小计：￥{{ (Number(item.price) * item.quantity).toFixed(2) }}</div>
               </div>
             </div>
-            <el-button type="danger" link class="item-delete" @click="remove(item.id)">删除</el-button>
+            <div class="row-side">
+              <el-button type="danger" link class="item-delete" @click.stop="remove(item.id)">删除</el-button>
+            </div>
           </div>
         </section>
 
@@ -107,9 +110,9 @@
         <!-- 商品列表 -->
         <section v-if="productList.length" class="block section-card">
           <div class="section-title">商品</div>
-          <div v-for="item in productList" :key="item.id" class="item-card">
+          <div v-for="item in productList" :key="item.id" class="item-card" @click="goCartItemDetail(item)">
             <div class="item-left">
-              <el-checkbox v-model="selectedMap[item.id]" class="item-check" />
+              <el-checkbox v-model="selectedMap[item.id]" class="item-check" @click.stop />
               <div class="item-icon-wrap">
                 <img v-if="item.image" :src="item.image" :alt="item.name" class="item-icon" />
                 <span v-else class="item-emoji">👟</span>
@@ -123,16 +126,18 @@
                 <div class="item-price-row">
                   <span class="item-price">单价：￥{{ item.price }}/{{ item.unit || '件' }}</span>
                   <div class="item-qty">
-                    <button type="button" class="qty-btn" :disabled="item.quantity <= 1" @click="changeQty(item, -1)">−</button>
+                    <button type="button" class="qty-btn" :disabled="item.quantity <= 1" @click.stop="changeQty(item, -1)">−</button>
                     <span class="qty-num">{{ item.quantity }}</span>
-                    <button type="button" class="qty-btn" :disabled="item.quantity >= 99" @click="changeQty(item, 1)">+</button>
+                    <button type="button" class="qty-btn" :disabled="item.quantity >= 99" @click.stop="changeQty(item, 1)">+</button>
                   </div>
                 </div>
                 <div class="item-features">🔄 鞋面养护 · 除菌除味</div>
                 <div class="item-subtotal">小计：￥{{ (Number(item.price) * item.quantity).toFixed(2) }}</div>
               </div>
             </div>
-            <el-button type="danger" link class="item-delete" @click="remove(item.id)">删除</el-button>
+            <div class="row-side">
+              <el-button type="danger" link class="item-delete" @click.stop="remove(item.id)">删除</el-button>
+            </div>
           </div>
         </section>
 
@@ -407,6 +412,24 @@ function addHot() {
     load()
   }).catch((e: any) => ElMessage.error(e?.response?.data?.message || '加入失败'))
 }
+function goCartItemDetail(item: CartItem) {
+  const id = item.itemType === 'SERVICE' ? item.serviceId : item.productId
+  if (!id) {
+    ElMessage.warning('商品信息不存在')
+    return
+  }
+  const base = item.itemType === 'SERVICE' ? '/home/user/service' : '/home/user/product'
+  let url = `${base}/${id}`
+  const query: Record<string, string> = {
+    cartId: String(item.id),
+    quantity: String(item.quantity),
+  }
+  if (item.itemType === 'SERVICE' && item.serviceSpecName) {
+    query.specName = item.serviceSpecName
+  }
+  router.push({ path: url, query })
+}
+
 function goCheckout() {
   const ids = list.value.filter((i) => selectedMap[i.id]).map((i) => i.id)
   if (ids.length === 0) return
@@ -450,152 +473,185 @@ onMounted(load)
 .cart-page {
   min-height: 100vh;
   background: #F9F5F0;
-  padding: 16px 16px 80px;
-  font-size: 26px;
+  padding: 12px 12px 60px;
+  font-size: 14px;
 }
-.cart-empty { padding: 48px 0; }
+.cart-empty { padding: 32px 0; }
 
 .cart-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
-.cart-title { font-size: 42px; font-weight: 600; color: #2D2A27; margin: 0; }
-.cart-manage { font-size: 28px; color: #4A3F38; cursor: pointer; }
+.cart-title { font-size: 22px; font-weight: 600; color: #2D2A27; margin: 0; }
+.cart-manage { font-size: 14px; color: #4A3F38; cursor: pointer; }
 
 .block {
   background: #fff;
-  border-radius: 16px;
-  padding: 16px;
-  margin-bottom: 12px;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
   box-shadow: 0 2px 8px rgba(74, 63, 56, 0.06);
 }
 .store-card .store-row, .address-card .address-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
-.store-name { font-size: 32px; font-weight: 600; color: #2D2A27; flex: 1; }
-.store-tags, .promo-tags { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.store-name { font-size: 16px; font-weight: 600; color: #2D2A27; flex: 1; }
+.store-tags, .promo-tags { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
 .store-tags span, .promo-tags span {
-  font-size: 22px;
+  font-size: 12px;
   color: #8F7F70;
   background: #F0E9E2;
-  padding: 4px 10px;
+  padding: 2px 6px;
   border-radius: 999px;
 }
-.address-label { font-size: 26px; color: #2D2A27; }
-.address-detail { flex: 1; font-size: 26px; color: #606266; }
-.address-edit { font-size: 26px; color: #4A3F38; cursor: pointer; }
+.address-label { font-size: 14px; color: #2D2A27; }
+.address-detail { flex: 1; font-size: 14px; color: #606266; }
+.address-edit { font-size: 14px; color: #4A3F38; cursor: pointer; }
 .store-card { cursor: pointer; position: relative; }
 .store-card .link-nearby {
   display: block;
-  margin-top: 6px;
-  font-size: 18px;
+  margin-top: 4px;
+  font-size: 12px;
   color: #C17C5A;
   text-decoration: none;
 }
 .store-card .link-nearby:hover { text-decoration: underline; }
-.dialog-address-list { max-height: 320px; overflow-y: auto; }
+.dialog-address-list { max-height: 240px; overflow-y: auto; }
 .dialog-address-item {
-  padding: 12px; border: 1px solid #F0E9E2; border-radius: 12px; margin-bottom: 8px; cursor: pointer;
+  padding: 8px; border: 1px solid #F0E9E2; border-radius: 8px; margin-bottom: 6px; cursor: pointer;
 }
 .dialog-address-item.active { border-color: #4A3F38; background: #F9F5F0; }
-.addr-line { font-weight: 500; color: #2D2A27; }
+.addr-line { font-weight: 500; color: #2D2A27; font-size: 14px; }
 .addr-line2 {
-  font-size: 22px;
+  font-size: 12px;
   color: #8F7F70;
-  margin-top: 4px;
+  margin-top: 3px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.dialog-store-list { max-height: 320px; overflow-y: auto; }
+.dialog-store-list { max-height: 240px; overflow-y: auto; }
 .dialog-store-item {
-  padding: 12px; border: 1px solid #F0E9E2; border-radius: 12px; margin-bottom: 8px; cursor: pointer;
+  padding: 8px; border: 1px solid #F0E9E2; border-radius: 8px; margin-bottom: 6px; cursor: pointer;
 }
 .dialog-store-item.active { border-color: #4A3F38; background: #F9F5F0; }
-.dialog-store-item .store-name { font-weight: 500; color: #2D2A27; }
-.dialog-store-item .store-addr { font-size: 22px; color: #8F7F70; margin-top: 4px; }
-.dialog-store-item .store-phone { font-size: 20px; color: #606266; margin-top: 2px; }
+.dialog-store-item .store-name { font-weight: 500; color: #2D2A27; font-size: 14px; }
+.dialog-store-item .store-addr { font-size: 12px; color: #8F7F70; margin-top: 3px; }
+.dialog-store-item .store-phone { font-size: 11px; color: #606266; margin-top: 2px; }
 
-.section-title { font-size: 28px; color: #8F7F70; margin-bottom: 12px; }
-.section-card { padding: 14px; }
+.section-title { font-size: 14px; color: #8F7F70; margin-bottom: 8px; }
+.section-card { padding: 10px; }
 .item-card {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 14px 0;
+  padding: 10px 0;
   border-bottom: 1px dashed #F0E9E2;
+  cursor: pointer;
+  position: relative;
+}
+.item-card:hover {
+  background: rgba(249, 245, 240, 0.5);
 }
 .item-card:last-child { border-bottom: none; }
-.item-left { display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 0; }
+.item-left { display: flex; align-items: flex-start; gap: 8px; flex: 1; min-width: 0; }
 .item-check { flex-shrink: 0; }
-.item-icon-wrap { width: 56px; height: 56px; border-radius: 12px; overflow: hidden; background: #F0E9E2; flex-shrink: 0; }
+.item-icon-wrap { width: 40px; height: 40px; border-radius: 8px; overflow: hidden; background: #F0E9E2; flex-shrink: 0; }
 .item-icon { width: 100%; height: 100%; object-fit: contain; }
-.item-icon-wrap { width: 98px; height: 98px; }
-.item-emoji { font-size: 50px; width: 98px; text-align: center; flex-shrink: 0; }
+.item-emoji { font-size: 28px; width: 40px; text-align: center; flex-shrink: 0; }
 .item-body { flex: 1; min-width: 0; }
-.item-name { font-weight: 600; font-size: 30px; color: #2D2A27; margin-bottom: 8px; }
-.item-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
-.item-rating { font-size: 22px; color: #8F7F70; }
-.item-tag { font-size: 20px; color: #C17C5A; background: #F0E9E2; padding: 4px 10px; border-radius: 6px; }
+.item-name { font-weight: 600; font-size: 14px; color: #2D2A27; margin-bottom: 4px; }
+.item-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap; }
+.item-rating { font-size: 12px; color: #8F7F70; }
+.item-tag { font-size: 11px; color: #C17C5A; background: #F0E9E2; padding: 2px 6px; border-radius: 4px; }
 .item-tag.winter { color: #5B8DEF; }
 .item-tag.hot { color: #E74C3C; }
-.item-price-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-.item-price { font-size: 28px; color: #C17C5A; font-weight: 600; }
-.item-qty { display: inline-flex; align-items: center; border: 1px solid #DCD2C9; border-radius: 8px; }
+.spec-tag {
+  font-size: 11px;
+  color: #C17C5A;
+  background: #F0E9E2;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+.item-price-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
+.item-price { font-size: 14px; color: #C17C5A; font-weight: 600; }
+.item-qty { display: inline-flex; align-items: center; border: 1px solid #DCD2C9; border-radius: 6px; }
 .item-qty .qty-btn {
-  width: 46px; height: 46px; border: none; background: #F9F5F0; color: #4A3F38; cursor: pointer; font-size: 32px;
+  width: 28px; height: 28px; border: none; background: #F9F5F0; color: #4A3F38; cursor: pointer; font-size: 18px;
 }
 .item-qty .qty-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.item-qty .qty-num { min-width: 50px; text-align: center; font-size: 28px; }
-.item-qty-note { font-size: 22px; color: #8F7F70; }
-.item-features { font-size: 22px; color: #8F7F70; margin-bottom: 4px; }
-.item-subtotal { font-size: 28px; font-weight: 600; color: #2D2A27; }
+.item-qty .qty-num { min-width: 32px; text-align: center; font-size: 14px; }
+.item-qty-note { font-size: 12px; color: #8F7F70; }
+.item-features { font-size: 12px; color: #8F7F70; margin-bottom: 3px; }
+.item-subtotal { font-size: 14px; font-weight: 600; color: #2D2A27; }
 .item-delete { flex-shrink: 0; }
 .add-card .item-emoji { display: inline-block; }
-.item-delete :deep(.el-button) { font-size: 22px; }
+.item-delete :deep(.el-button) { font-size: 12px; }
+.row-side {
+  position: absolute;
+  right: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.item-card::after {
+  content: '›';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: #DCD2C9;
+}
 
 .recommend-card .item-card, .hot-card .item-card { border-bottom: none; }
 
-.promo-card { margin-bottom: 12px; }
+.promo-card { margin-bottom: 8px; }
 .promo-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
-.promo-label { font-size: 19px; color: #2D2A27; }
-.promo-extra { flex: 1; font-size: 18px; color: #8F7F70; }
+.promo-label { font-size: 12px; color: #2D2A27; }
+.promo-extra { flex: 1; font-size: 11px; color: #8F7F70; }
 
-.summary-card { padding: 16px; }
-.summary-row { display: flex; justify-content: space-between; font-size: 26px; color: #606266; margin-bottom: 8px; }
+.summary-card { padding: 12px; }
+.summary-row { display: flex; justify-content: space-between; font-size: 14px; color: #606266; margin-bottom: 6px; }
 .summary-row span:last-child { color: #2D2A27; }
 .summary-row .text-discount { color: #C17C5A; }
-.summary-divider { height: 1px; background: #F0E9E2; margin: 12px 0; }
-.summary-row.total-row { font-size: 32px; font-weight: 600; margin-bottom: 0; }
-.total-pay { font-size: 40px; color: #C17C5A; }
+.summary-divider { height: 1px; background: #F0E9E2; margin: 8px 0; }
+.summary-row.total-row { font-size: 16px; font-weight: 600; margin-bottom: 0; }
+.total-pay { font-size: 20px; color: #C17C5A; }
 
 .cart-footer {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 86px;
-  padding: 0 16px;
+  height: 56px;
+  padding: 0 12px;
   display: flex;
   align-items: center;
   background: #fff;
   box-shadow: 0 -2px 12px rgba(74, 63, 56, 0.08);
   z-index: 10;
 }
-.footer-left { display: flex; align-items: center; gap: 4px; }
-.all-check { font-size: 26px; }
-.footer-count { font-size: 22px; color: #8F7F70; }
-.footer-center { flex: 1; text-align: center; padding: 0 12px; }
-.footer-total-label { font-size: 26px; color: #606266; margin-right: 4px; }
-.footer-total-value { font-size: 38px; font-weight: 700; color: #C17C5A; }
-.footer-discount-tip { font-size: 18px; color: #8F7F70; margin-left: 4px; }
-.footer-btn { border-radius: 24px; min-width: 200px; font-weight: 500; font-size: 26px; padding: 10px 20px; height: auto; }
+.footer-left { display: flex; align-items: center; gap: 3px; }
+.all-check { font-size: 14px; }
+.footer-count { font-size: 12px; color: #8F7F70; }
+.footer-center { flex: 1; text-align: center; padding: 0 8px; }
+.footer-total-label { font-size: 14px; color: #606266; margin-right: 3px; }
+.footer-total-value { font-size: 20px; font-weight: 700; color: #C17C5A; }
+.footer-discount-tip { font-size: 11px; color: #8F7F70; margin-left: 3px; }
+.footer-btn { border-radius: 16px; min-width: 120px; font-weight: 500; font-size: 14px; padding: 6px 14px; height: auto; }
 </style>

@@ -1,82 +1,84 @@
 <template>
   <view class="page">
-    <view class="hero-card">
-      <view class="hero-copy">
-        <text class="hero-title">Hi，我是洗衣优选<text class="blue">AI客服</text></text>
-        <text class="hero-subtitle">我可以帮您解答洗护、价格、取送、订单等问题</text>
-        <text class="hero-subtitle">24小时在线，随时为您服务</text>
-      </view>
-      <view class="robot-hero">
-        <view class="robot-head">
-          <view class="robot-screen">
-            <view class="robot-eye"></view>
-            <view class="robot-eye"></view>
-          </view>
-          <view class="robot-ear left"></view>
-          <view class="robot-ear right"></view>
+    <scroll-view class="content-scroll" scroll-y scroll-with-animation :scroll-into-view="lastMessageId">
+      <view class="hero-card">
+        <view class="hero-copy">
+          <text class="hero-title">Hi，我是洗衣优选<text class="blue">AI客服</text></text>
+          <text class="hero-subtitle">我可以帮您解答洗护、价格、取送、订单等问题</text>
+          <text class="hero-subtitle">24小时在线，随时为您服务</text>
         </view>
-        <view class="robot-body">AI</view>
+        <view class="robot-hero">
+          <view class="robot-head">
+            <view class="robot-screen">
+              <view class="robot-eye"></view>
+              <view class="robot-eye"></view>
+            </view>
+            <view class="robot-ear left"></view>
+            <view class="robot-ear right"></view>
+          </view>
+          <view class="robot-body">AI</view>
+        </view>
       </view>
-    </view>
 
-    <view class="guess-card">
-      <view class="section-head">
-        <view class="star-icon">AI</view>
-        <text>猜你喜欢</text>
+      <view class="guess-card">
+        <view class="section-head">
+          <view class="star-icon">AI</view>
+          <text>猜你喜欢</text>
+        </view>
+        <view class="question-grid">
+          <view
+            v-for="item in quickQuestions"
+            :key="item.text"
+            class="question-item"
+            @click="sendQuick(item.text)"
+          >
+            <view class="question-icon" :class="item.color">{{ item.icon }}</view>
+            <text class="question-text">{{ item.text }}</text>
+            <text class="arrow">›</text>
+          </view>
+        </view>
       </view>
-      <view class="question-grid">
+
+      <view class="chat-area">
         <view
-          v-for="item in quickQuestions"
-          :key="item.text"
-          class="question-item"
-          @click="sendQuick(item.text)"
+          v-for="msg in messages"
+          :id="`msg-${msg.id}`"
+          :key="msg.id"
+          class="message-row"
+          :class="msg.role"
         >
-          <view class="question-icon" :class="item.color">{{ item.icon }}</view>
-          <text class="question-text">{{ item.text }}</text>
-          <text class="arrow">›</text>
-        </view>
-      </view>
-    </view>
-
-    <scroll-view class="chat-area" scroll-y :scroll-into-view="lastMessageId">
-      <view
-        v-for="msg in messages"
-        :id="`msg-${msg.id}`"
-        :key="msg.id"
-        class="message-row"
-        :class="msg.role"
-      >
-        <view v-if="msg.role === 'assistant'" class="avatar">
-          <view class="mini-robot-face">
-            <view></view>
-            <view></view>
+          <view v-if="msg.role === 'assistant'" class="avatar">
+            <view class="mini-robot-face">
+              <view></view>
+              <view></view>
+            </view>
           </view>
-        </view>
-        <view class="bubble">
-          <text class="message-text">{{ msg.content }}</text>
-          <view v-if="msg.role === 'assistant' && msg.services && msg.services.length" class="service-recommend">
-            <view class="recommend-title">为您找到相关服务</view>
-            <view
-              v-for="service in msg.services"
-              :key="service.id"
-              class="service-card"
-              @click="goOrder(service.id)"
-            >
-              <view class="service-main">
-                <image v-if="service.image" class="service-image" :src="resolveImageUrl(service.image)" mode="aspectFill" />
-                <view v-else class="service-image service-ph">洗</view>
-                <view class="service-info">
-                  <text class="service-name">{{ service.name }}</text>
-                  <text class="service-desc">{{ service.cycle || service.category || '专业洗护服务' }}</text>
-                  <text class="service-price">¥{{ service.price }}/件起</text>
+          <view class="bubble">
+            <text class="message-text">{{ msg.content }}</text>
+            <view v-if="msg.role === 'assistant' && msg.services && msg.services.length" class="service-recommend">
+              <view class="recommend-title">为您找到相关服务</view>
+              <view
+                v-for="service in msg.services"
+                :key="service.id"
+                class="service-card"
+                @click="goOrder(service.id)"
+              >
+                <view class="service-main">
+                  <image v-if="service.image" class="service-image" :src="resolveImageUrl(service.image)" mode="aspectFill" />
+                  <view v-else class="service-image service-ph">洗</view>
+                  <view class="service-info">
+                    <text class="service-name">{{ service.name }}</text>
+                    <text class="service-desc">{{ service.cycle || service.category || '专业洗护服务' }}</text>
+                    <text class="service-price">¥{{ service.price }}/件起</text>
+                  </view>
                 </view>
+                <view class="order-btn">去下单</view>
               </view>
-              <view class="order-btn">去下单</view>
             </view>
           </view>
         </view>
+        <view class="chat-time">{{ currentTime }}</view>
       </view>
-      <view class="chat-time">{{ currentTime }}</view>
     </scroll-view>
 
     <view class="bottom-panel">
@@ -156,6 +158,7 @@ const question = ref('')
 const loading = ref(false)
 const services = ref<ServiceItem[]>([])
 const userStore = useUserStore()
+const genericServiceWords = ['清洗', '干洗', '洗护', '护理', '服务', '保养', '去污', '除臭', '专业', '日常']
 const lastMessageId = computed(() => {
   const last = messages.value[messages.value.length - 1]
   return last ? `msg-${last.id}` : ''
@@ -193,6 +196,17 @@ function serviceCoreName(name: string) {
     .replace(/干洗|清洗|精洗|洗护|护理|保养|翻新|修复|服务/g, '')
 }
 
+function containsSpecificTerm(service: ServiceItem, text: string) {
+  const haystack = compactText(text)
+  const parts = [service.name, service.category, service.specs, service.description]
+    .map(compactText)
+    .join(' ')
+    .split(/[|;；,，、\s]+/)
+    .map((part) => part.replace(/\d+(\.\d+)?/g, ''))
+    .filter((part) => part.length >= 2 && !genericServiceWords.includes(part))
+  return parts.some((part) => haystack.includes(part) || haystack.includes(serviceCoreName(part)))
+}
+
 function serviceScore(service: ServiceItem, text: string) {
   const haystack = compactText(text)
   const name = compactText(service.name)
@@ -202,12 +216,7 @@ function serviceScore(service: ServiceItem, text: string) {
   if (name && haystack.includes(name)) score += 100
   if (core.length >= 2 && haystack.includes(core)) score += 80
   if (category && haystack.includes(category)) score += 18
-  ;[service.description, service.specs, service.cycle]
-    .map(compactText)
-    .filter(Boolean)
-    .forEach((part) => {
-      if (part.length >= 2 && haystack.includes(part.slice(0, Math.min(4, part.length)))) score += 8
-    })
+  if (containsSpecificTerm(service, text)) score += 24
 
   const chars = Array.from(new Set(core.split('').filter((ch) => /[\u4e00-\u9fa5a-z0-9]/.test(ch))))
   const hits = chars.filter((ch) => haystack.includes(ch)).length
@@ -243,14 +252,14 @@ async function send() {
   loading.value = true
   await nextTick()
   try {
-    const res = await askAi(text, userStore.user?.id)
+    const res = await askAi(text, userStore.user ? userStore.user.id : undefined)
     const answer = res.answer || '我暂时没有获得答案，请换一种问法试试。'
     messages.value.push({
       id: Date.now() + 1,
       role: 'assistant',
       content: answer,
       source: res.sourceType,
-      services: findRelatedServices(`${text} ${answer}`),
+      services: findRelatedServices(text),
     })
   } catch (e: any) {
     uni.showToast({ title: (e && e.message) || 'AI客服暂时不可用', icon: 'none' })
@@ -271,12 +280,17 @@ onLoad(loadServices)
 
 <style scoped lang="scss">
 .page {
-  min-height: 100vh;
-  padding: 20rpx 24rpx 330rpx;
+  height: 100vh;
   box-sizing: border-box;
+  overflow: hidden;
   background:
     radial-gradient(circle at 50% 46%, rgba(70, 145, 255, 0.16), transparent 48%),
     linear-gradient(180deg, #f8fbff 0%, #edf6ff 58%, #fbfdff 100%);
+}
+.content-scroll {
+  height: 100vh;
+  padding: 20rpx 24rpx 330rpx;
+  box-sizing: border-box;
 }
 .hero-card {
   position: relative;
@@ -489,8 +503,7 @@ onLoad(loadServices)
   margin-left: 6rpx;
 }
 .chat-area {
-  height: 540rpx;
-  padding: 42rpx 20rpx 24rpx;
+  padding: 30rpx 20rpx 24rpx;
   box-sizing: border-box;
   margin-top: 18rpx;
 }

@@ -19,29 +19,48 @@
         </view>
       </view>
       <CommentSection :targetType="'PRODUCT'" :targetId="product.id" :previewCount="2" />
-      <button class="btn-primary add-btn" @click="addCart">加入购物车</button>
+      <button class="btn-primary add-btn" @click="submitAction">{{ actionText }}</button>
     </view>
     <AiFloat />
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { getProductDetail, type ProductItem } from '@/api/product'
-import { addToCart } from '@/api/cart'
+import { addToCart, updateCartQuantity } from '@/api/cart'
 import CommentSection from '@/components/CommentSection.vue'
 import { resolveImageUrl, requireLogin } from '@/utils'
 
 const productId = ref(0)
+const cartId = ref(0)
 const loading = ref(true)
 const product = ref<ProductItem | null>(null)
 const quantity = ref(1)
+const actionText = computed(() => cartId.value ? '保存修改' : '加入购物车')
 
-onLoad((q) => { productId.value = Number((q && q.id) || 0) })
+onLoad((q) => {
+  productId.value = Number((q && q.id) || 0)
+  cartId.value = Number((q && q.cartId) || 0)
+  quantity.value = Math.max(1, Math.min(99, Number((q && q.quantity) || 1)))
+})
 
 function changeQty(d: number) {
   quantity.value = Math.max(1, Math.min(99, quantity.value + d))
+}
+
+function submitAction() {
+  if (cartId.value) {
+    updateCartQuantity(cartId.value, quantity.value)
+      .then(() => {
+        uni.showToast({ title: '已保存', icon: 'success' })
+        setTimeout(() => uni.navigateBack(), 350)
+      })
+      .catch((e) => uni.showToast({ title: (e && e.message) || '保存失败', icon: 'none' }))
+    return
+  }
+  addCart()
 }
 
 function addCart() {

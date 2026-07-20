@@ -105,8 +105,8 @@ const payTotal = computed(() =>
   selectedList.value.reduce((s, i) => s + Number(i.price) * i.quantity, 0)
 )
 const selectedStore = computed(() => storeList.value.find((s) => s.id === selectedStoreId.value) || null)
-const selectedStoreText = computed(() => selectedStoreName.value || selectedStore.value?.name || '请选择门店')
-const selectedStoreAddressText = computed(() => selectedStoreAddress.value || selectedStore.value?.address || '')
+const selectedStoreText = computed(() => selectedStoreName.value || (selectedStore.value ? selectedStore.value.name : '') || '请选择门店')
+const selectedStoreAddressText = computed(() => selectedStoreAddress.value || (selectedStore.value ? selectedStore.value.address : '') || '')
 
 onLoad((q) => {
   if (!requireLogin('/pages/checkout/checkout')) return

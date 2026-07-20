@@ -20,6 +20,7 @@ const routes = [
       { path: 'user/store', name: 'NearbyStore', component: () => import('@/views/user/NearbyStore.vue') },
       { path: 'user/ai', name: 'AiAssistant', component: () => import('@/views/user/AiAssistant.vue') },
       { path: 'user/order', name: 'MyOrders', component: () => import('@/views/user/MyOrders.vue') },
+      { path: 'user/order/detail/:id', name: 'OrderDetail', component: () => import('@/views/user/OrderDetail.vue') },
       { path: 'user/order/pay', name: 'OrderPay', component: () => import('@/views/user/OrderPay.vue') },
       { path: 'user/order/create', name: 'OrderCreate', component: () => import('@/views/user/OrderCreate.vue') },
       { path: 'user/comment/:targetType/:targetId', name: 'CommentList', component: () => import('@/views/user/CommentList.vue') },

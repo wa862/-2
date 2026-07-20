@@ -37,6 +37,15 @@ public class OrderController {
         return ResponseEntity.ok(orderService.listByUser(userId, page, size));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<OrderDTO> detail(Authentication auth, @PathVariable Long id) {
+        if (auth == null || auth.getPrincipal() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        Long userId = (Long) auth.getPrincipal();
+        return ResponseEntity.ok(orderService.detail(userId, id));
+    }
+
     /** 管理端/商家端：分页订单列表，可选 status 筛选 */
     @GetMapping("/list")
     public ResponseEntity<Page<OrderDTO>> list(

@@ -39,7 +39,7 @@
           >
             <view class="check-dot"><text v-if="deliveryType === 'DOOR_TO_DOOR'">✓</text></view>
             <view class="delivery-icon">🚚</view>
-            <view>
+            <view class="delivery-meta">
               <text class="delivery-title">上门取送</text>
               <text class="delivery-desc">专人上门取衣，清洗后送回</text>
             </view>
@@ -51,7 +51,7 @@
           >
             <view class="check-dot"><text v-if="deliveryType === 'IN_STORE'">✓</text></view>
             <view class="delivery-icon">🏬</view>
-            <view>
+            <view class="delivery-meta">
               <text class="delivery-title">到店自取</text>
               <text class="delivery-desc">到店下单，到店取衣</text>
             </view>
@@ -107,10 +107,19 @@
 
       <view class="card remark-card">
         <text class="section-title">备注</text>
+        <view class="remark-options">
+          <text
+            v-for="item in remarkOptions"
+            :key="item"
+            class="remark-tag"
+            :class="{ active: remarkSelected(item) }"
+            @click="toggleRemark(item)"
+          >{{ item }}</text>
+        </view>
         <textarea
           v-model="form.remark"
           maxlength="100"
-          placeholder="请输入备注信息（可选）"
+          placeholder="可选择上方常用备注，也可手动输入"
           class="textarea"
         />
         <text class="count">{{ form.remark.length }}/100</text>
@@ -136,7 +145,7 @@
         <button class="manage-btn" @click="goProfile">管理地址</button>
       </view>
     </view>
-    <AiFloat />
+    <AiFloat :bottom-offset="190" />
   </view>
 </template>
 
@@ -166,6 +175,16 @@ const selectedStoreName = ref('')
 const selectedStoreAddress = ref('')
 const showAddressPicker = ref(false)
 const submitting = ref(false)
+const remarkOptions = [
+  '衣物有污渍',
+  '轻柔清洗',
+  '深浅色分开',
+  '不要烘干',
+  '不要熨烫',
+  '需要加急',
+  '送回前联系',
+  '有贵重配饰',
+]
 
 const specs = computed(() => (service.value ? parseServiceSpecs(service.value.specs) : []))
 const serviceOptions = computed(() => {
@@ -194,8 +213,8 @@ const selectedAddressText = computed(() => {
   return a ? `${a.contactName} ${fullAddress(a)}` : '请选择取送地址'
 })
 const selectedStore = computed(() => storeList.value.find((s) => s.id === selectedStoreId.value) || null)
-const selectedStoreText = computed(() => selectedStoreName.value || selectedStore.value?.name || '请选择门店')
-const selectedStoreAddressText = computed(() => selectedStoreAddress.value || selectedStore.value?.address || '')
+const selectedStoreText = computed(() => selectedStoreName.value || (selectedStore.value ? selectedStore.value.name : '') || '请选择门店')
+const selectedStoreAddressText = computed(() => selectedStoreAddress.value || (selectedStore.value ? selectedStore.value.address : '') || '')
 const pickupDateText = computed(() => {
   if (!pickupDate.value) return '请选择日期'
   const weekdays = ['日', '一', '二', '三', '四', '五', '六']
@@ -220,6 +239,17 @@ function selectSpec(name: string) { selectedSpecName.value = name }
 function onDateChange(e: any) { pickupDate.value = e.detail.value }
 function changeQty(d: number) { form.quantity = Math.max(1, Math.min(99, form.quantity + d)) }
 function selectAddress(id: number) { selectedAddressId.value = id; showAddressPicker.value = false }
+function remarkSelected(text: string) { return form.remark.split('，').includes(text) }
+function toggleRemark(text: string) {
+  const parts = form.remark.split('，').map((item) => item.trim()).filter(Boolean)
+  const index = parts.indexOf(text)
+  if (index >= 0) {
+    parts.splice(index, 1)
+  } else {
+    parts.push(text)
+  }
+  form.remark = parts.join('，').slice(0, 100)
+}
 
 async function loadAddresses() {
   try {
@@ -309,7 +339,7 @@ onMounted(async () => {
 <style scoped lang="scss">
 .page {
   min-height: 100vh;
-  padding: 24rpx 28rpx 190rpx;
+  padding: 24rpx 28rpx 270rpx;
   box-sizing: border-box;
   background: linear-gradient(180deg, #f6faff 0%, #f7f9fc 48%, #ffffff 100%);
   color: #111827;
@@ -339,16 +369,16 @@ onMounted(async () => {
 
 .service-options {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18rpx;
 }
 
 .service-option {
-  min-height: 104rpx;
-  padding: 18rpx 16rpx;
+  min-height: 124rpx;
+  padding: 18rpx;
   display: flex;
   align-items: center;
-  gap: 14rpx;
+  gap: 12rpx;
   border: 2rpx solid transparent;
   border-radius: 14rpx;
   background: linear-gradient(135deg, #f8fbff, #f2f5fa);
@@ -362,8 +392,8 @@ onMounted(async () => {
 }
 
 .service-icon {
-  width: 60rpx;
-  height: 60rpx;
+  width: 58rpx;
+  height: 58rpx;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -371,6 +401,12 @@ onMounted(async () => {
   background: #e8f1ff;
   font-size: 34rpx;
   flex-shrink: 0;
+}
+
+.service-meta,
+.delivery-meta {
+  flex: 1;
+  min-width: 0;
 }
 
 .service-name,
@@ -383,18 +419,19 @@ onMounted(async () => {
 }
 
 .service-name {
-  max-width: 150rpx;
+  width: 100%;
   font-size: 28rpx;
   font-weight: 700;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.25;
+  white-space: normal;
+  word-break: break-all;
 }
 
 .service-price {
   margin-top: 4rpx;
   color: #6b7280;
   font-size: 26rpx;
+  line-height: 1.2;
 }
 
 .quantity-row {
@@ -450,11 +487,11 @@ onMounted(async () => {
 }
 
 .delivery-option {
-  min-height: 106rpx;
-  padding: 20rpx;
+  min-height: 136rpx;
+  padding: 20rpx 18rpx;
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: 12rpx;
   border: 2rpx solid transparent;
   border-radius: 14rpx;
   background: #f8fafc;
@@ -479,7 +516,7 @@ onMounted(async () => {
   color: #fff;
   font-size: 26rpx;
   box-sizing: border-box;
-  flex-shrink: 0;
+  flex: 0 0 44rpx;
 }
 
 .delivery-option.active .check-dot,
@@ -490,19 +527,25 @@ onMounted(async () => {
 }
 
 .delivery-icon {
-  width: 48rpx;
-  font-size: 34rpx;
+  width: 42rpx;
+  flex: 0 0 42rpx;
+  font-size: 32rpx;
 }
 
 .delivery-title {
   font-size: 30rpx;
   font-weight: 700;
+  line-height: 1.25;
+  white-space: normal;
 }
 
 .delivery-desc {
   margin-top: 4rpx;
   font-size: 24rpx;
   color: #8b95a5;
+  line-height: 1.35;
+  white-space: normal;
+  word-break: break-all;
 }
 
 .info-row {
@@ -640,6 +683,31 @@ onMounted(async () => {
 
 .remark-card {
   position: relative;
+}
+
+.remark-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+  margin: -4rpx 0 18rpx;
+  padding-right: 8rpx;
+}
+
+.remark-tag {
+  padding: 12rpx 18rpx;
+  border-radius: 999rpx;
+  color: #55708f;
+  background: #f1f6ff;
+  border: 1rpx solid #dce9ff;
+  font-size: 25rpx;
+  line-height: 1;
+}
+
+.remark-tag.active {
+  color: #fff;
+  background: linear-gradient(135deg, #3f9cff, #2474ff);
+  border-color: transparent;
+  box-shadow: 0 8rpx 18rpx rgba(36, 116, 255, 0.18);
 }
 
 .textarea {

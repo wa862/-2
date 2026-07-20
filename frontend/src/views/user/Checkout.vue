@@ -198,6 +198,7 @@ import { ArrowLeft, Loading } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { getCartList, removeCartItem } from '@/api/cart'
 import { createOrder, createProductOrder } from '@/api/order'
+import { createPayments } from '@/api/payment'
 import {
   getAddressList,
   createAddress,
@@ -502,11 +503,12 @@ async function submit() {
   submitting.value = true
   const cartIdsToRemove = selectedList.value.map((i) => i.id)
   try {
+    const createdOrderIds: number[] = []
     const addressId = hasServices && deliveryType.value === 'DOOR_TO_DOOR' ? selectedAddressId.value ?? undefined : undefined
     const storeId = hasServices ? selectedStoreId.value ?? undefined : undefined
     for (const item of serviceItems.value) {
       if (item.serviceId) {
-        await createOrder(
+        const order = await createOrder(
           item.serviceId,
           item.quantity,
           '',
@@ -517,6 +519,7 @@ async function submit() {
           pickupDate.value || undefined,
           urgent.value
         )
+        createdOrderIds.push(order.id)
       }
     }
     for (const item of productItems.value) {
@@ -526,20 +529,19 @@ async function submit() {
           ElMessage.warning('请选择收货地址或新增地址')
           return
         }
-        await createProductOrder(item.productId, item.quantity, '', selectedAddressId.value ?? undefined, 'DOOR_TO_DOOR', undefined)
+        const order = await createProductOrder(item.productId, item.quantity, '', selectedAddressId.value ?? undefined, 'DOOR_TO_DOOR', undefined)
+        createdOrderIds.push(order.id)
       }
-    }
-    if (hasProducts) {
-      ElMessage.success(hasServices ? '订单提交成功' : '商品订单提交成功，请到「我的订单」查看')
-    } else {
-      ElMessage.success('订单提交成功')
     }
     for (const id of cartIdsToRemove) {
       try {
         await removeCartItem(id)
       } catch (_) {}
     }
-    router.push('/home/user/order')
+    const batch = await createPayments(createdOrderIds)
+    const paymentIds = batch.payments.map((p) => p.id).join(',')
+    ElMessage.success('订单提交成功，请选择支付方式')
+    router.push({ path: '/home/user/order/pay', query: { paymentIds } })
   } catch (e: any) {
     ElMessage.error(e?.response?.data?.message || '提交失败')
   } finally {
@@ -574,83 +576,83 @@ onMounted(() => {
 .checkout-page {
   min-height: 100vh;
   background: #F9F5F0;
-  padding: 16px 16px 100px;
+  padding: 12px 12px 70px;
 }
 .checkout-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 .back {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   color: #2D2A27;
   cursor: pointer;
   border-radius: 50%;
   background: #fff;
 }
-.title { font-size: 22px; font-weight: 600; color: #2D2A27; }
-.loading-wrap { text-align: center; padding: 48px; color: #8F7F70; }
+.title { font-size: 16px; font-weight: 600; color: #2D2A27; }
+.loading-wrap { text-align: center; padding: 32px; color: #8F7F70; }
 .add-addr-only-tip {
-  text-align: center; padding: 12px 16px; margin-bottom: 12px;
-  background: #fff8e6; color: #8F7F70; font-size: 18px; border-radius: 12px;
+  text-align: center; padding: 8px 12px; margin-bottom: 8px;
+  background: #fff8e6; color: #8F7F70; font-size: 14px; border-radius: 8px;
 }
 .block {
   background: #fff;
-  border-radius: 16px;
-  padding: 16px;
-  margin-bottom: 12px;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
   box-shadow: 0 2px 8px rgba(74, 63, 56, 0.06);
 }
-.section-title { font-size: 18px; color: #8F7F70; margin-bottom: 12px; }
+.section-title { font-size: 14px; color: #8F7F70; margin-bottom: 8px; }
 .checkout-item {
-  padding: 12px 0;
+  padding: 8px 0;
   border-bottom: 1px solid #F0E9E2;
 }
 .checkout-item:last-child { border-bottom: none; }
-.item-name { font-weight: 600; color: #2D2A27; margin-bottom: 4px; }
-.item-meta { font-size: 18px; color: #8F7F70; margin-bottom: 4px; }
-.item-subtotal { font-size: 18px; font-weight: 500; color: #C17C5A; }
-.summary-row { display: flex; justify-content: space-between; font-size: 20px; font-weight: 600; }
-.total-pay { font-size: 24px; color: #C17C5A; }
-.submit-wrap { margin-top: 24px; text-align: center; }
-.submit-btn { width: 100%; max-width: 320px; border-radius: 24px; font-weight: 500; }
+.item-name { font-weight: 600; color: #2D2A27; margin-bottom: 3px; font-size: 14px; }
+.item-meta { font-size: 13px; color: #8F7F70; margin-bottom: 3px; }
+.item-subtotal { font-size: 14px; font-weight: 500; color: #C17C5A; }
+.summary-row { display: flex; justify-content: space-between; font-size: 16px; font-weight: 600; }
+.total-pay { font-size: 18px; color: #C17C5A; }
+.submit-wrap { margin-top: 16px; text-align: center; }
+.submit-btn { width: 100%; max-width: 280px; border-radius: 16px; font-weight: 500; }
 
-.address-block .section-title { margin-bottom: 12px; }
-.address-list { display: flex; flex-direction: column; gap: 8px; }
+.address-block .section-title { margin-bottom: 8px; }
+.address-list { display: flex; flex-direction: column; gap: 6px; }
 .address-item {
-  padding: 12px;
+  padding: 8px;
   border: 1px solid #F0E9E2;
-  border-radius: 12px;
+  border-radius: 8px;
   cursor: pointer;
   position: relative;
 }
 .address-item.active { border-color: #4A3F38; background: #F9F5F0; }
 .address-item :deep(.el-radio) { width: 100%; height: auto; margin-right: 0; }
-.address-item :deep(.el-radio__label) { display: flex; flex-direction: column; gap: 4px; }
-.addr-text { font-weight: 500; color: #2D2A27; }
-.addr-detail { font-size: 18px; color: #8F7F70; }
-.default-tag { position: absolute; top: 8px; right: 8px; font-size: 18px; color: #C17C5A; }
-.add-addr-btn { width: 100%; margin-top: 8px; border-radius: 12px; }
+.address-item :deep(.el-radio__label) { display: flex; flex-direction: column; gap: 3px; }
+.addr-text { font-weight: 500; color: #2D2A27; font-size: 14px; }
+.addr-detail { font-size: 13px; color: #8F7F70; }
+.default-tag { position: absolute; top: 6px; right: 6px; font-size: 12px; color: #C17C5A; }
+.add-addr-btn { width: 100%; margin-top: 6px; border-radius: 8px; }
 
-.delivery-block .section-title { margin-bottom: 12px; }
-.delivery-group { display: flex; flex-direction: column; gap: 12px; width: 100%; }
-.delivery-radio { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px; border: 1px solid #F0E9E2; border-radius: 12px; }
+.delivery-block .section-title { margin-bottom: 8px; }
+.delivery-group { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.delivery-radio { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px; border: 1px solid #F0E9E2; border-radius: 8px; }
 .delivery-radio :deep(.el-radio__label) { display: flex; flex-direction: column; gap: 2px; }
-.delivery-label { font-weight: 500; color: #2D2A27; }
+.delivery-label { font-weight: 500; color: #2D2A27; font-size: 14px; }
 .store-block .section-title-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 .store-block .section-title { margin-bottom: 0; }
 .store-block .link-nearby {
-  font-size: 18px;
+  font-size: 13px;
   color: #C17C5A;
   text-decoration: none;
 }
@@ -660,18 +662,18 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
+  gap: 6px;
 }
 .store-block .address-item {
   width: 100%;
   box-sizing: border-box;
 }
 .store-block :deep(.el-radio) { width: 100%; height: auto; margin-right: 0; }
-.store-block :deep(.el-radio__label) { width: 100%; display: flex; flex-direction: column; gap: 4px; }
+.store-block :deep(.el-radio__label) { width: 100%; display: flex; flex-direction: column; gap: 3px; }
 .addr-inline-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 6px;
   width: 100%;
 }
 .addr-inline { width: 100%; }

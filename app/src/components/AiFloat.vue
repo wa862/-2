@@ -18,6 +18,12 @@
 <script setup lang="ts">
 import { computed, reactive } from 'vue'
 
+const props = withDefaults(defineProps<{
+  bottomOffset?: number
+}>(), {
+  bottomOffset: 90,
+})
+
 const FLOAT_SIZE = 56
 const EDGE_GAP = 12
 const CLICK_MOVE_LIMIT = 6
@@ -25,7 +31,7 @@ const CLICK_MOVE_LIMIT = 6
 const systemInfo = uni.getSystemInfoSync()
 const position = reactive({
   x: Math.max(EDGE_GAP, systemInfo.windowWidth - FLOAT_SIZE - 14),
-  y: Math.max(EDGE_GAP, systemInfo.windowHeight - FLOAT_SIZE - 90),
+  y: Math.max(EDGE_GAP, systemInfo.windowHeight - FLOAT_SIZE - props.bottomOffset),
 })
 const touchState = reactive({
   startX: 0,

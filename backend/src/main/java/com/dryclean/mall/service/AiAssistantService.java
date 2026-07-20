@@ -35,7 +35,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AiAssistantService {
 
-    private static final double LOCAL_MATCH_THRESHOLD = 0.34;
+    private static final double LOCAL_MATCH_THRESHOLD = 0.55;
+    private static final int SERVICE_MATCH_THRESHOLD = 24;
+    private static final int STRONG_SERVICE_MATCH_THRESHOLD = 55;
+    private static final List<String> SERVICE_ACTION_WORDS = List.of("下单", "预约", "预订", "帮我洗", "我要洗", "需要洗", "想洗", "我要清洗", "需要清洗");
+    private static final Set<String> GENERIC_SERVICE_TOKENS = Set.of(
+            "清洗", "干洗", "洗护", "护理", "服务", "保养", "去污", "除臭", "消毒", "专业", "日常", "项目", "下单", "预约"
+    );
 
     private final AiKnowledgeRepository knowledgeRepository;
     private final AiChatMessageRepository chatMessageRepository;
@@ -68,6 +74,12 @@ public class AiAssistantService {
         String question = normalize(request.getQuestion());
         if (question.isEmpty()) {
             throw new RuntimeException("问题不能为空");
+        }
+
+        AiChatResponse businessResponse = shouldPreferBusinessData(question) ? answerFromBusinessData(question, request.getUserId()) : null;
+        if (businessResponse != null) {
+            saveChatLog(request.getUserId(), question, businessResponse);
+            return businessResponse;
         }
 
         MatchResult match = findBestKnowledge(question);
@@ -166,13 +178,15 @@ public class AiAssistantService {
     private double score(String question, String haystack) {
         String q = normalize(question);
         String h = normalize(haystack);
-        if (h.contains(q) || q.contains(normalize(haystack.split("\\s+")[0]))) return 1.0;
+        if (h.contains(q)) return 1.0;
+        String firstQuestion = normalize(haystack.split("\\s+")[0]);
+        if (q.contains(firstQuestion) && firstQuestion.length() >= 4) return 0.9;
         Set<String> qTokens = tokenize(q);
         Set<String> hTokens = tokenize(h);
         if (qTokens.isEmpty() || hTokens.isEmpty()) return 0;
         int hit = 0;
         for (String token : qTokens) {
-            if (hTokens.contains(token) || h.contains(token)) hit++;
+            if (hTokens.contains(token)) hit++;
         }
         return hit * 1.0 / qTokens.size();
     }
@@ -183,9 +197,11 @@ public class AiAssistantService {
         for (String part : cleaned.split(" ")) {
             if (part.length() >= 2) tokens.add(part);
         }
-        for (int i = 0; i < text.length() - 1; i++) {
-            String token = text.substring(i, i + 2).trim();
-            if (token.length() == 2) tokens.add(token);
+        for (int i = 0; i < text.length() - 2; i++) {
+            String token = text.substring(i, i + 3).trim();
+            if (token.length() == 3 && token.chars().allMatch(c -> c >= 0x4e00 && c <= 0x9fa5)) {
+                tokens.add(token);
+            }
         }
         return tokens;
     }
@@ -260,13 +276,14 @@ public class AiAssistantService {
 
     private String buildSystemPrompt(String siteContext) {
         return "你是“洗衣优选｜专业干洗”网站的智能客服。必须根据下面的网站实际数据回答，不能编造不存在的服务、商品、门店、价格、周期或政策。"
+                + "你不能替用户直接创建订单、付款或修改订单；遇到下单需求时，要先匹配真实服务并引导用户去对应页面确认规格、地址和支付。"
                 + "如果数据里没有答案，请明确说当前网站未配置该信息，并引导用户查看干洗服务、商城、附近门店、我的订单或联系门店客服。"
                 + "回答要简洁、礼貌、直接，优先给出可操作建议。\n\n"
                 + siteContext;
     }
 
     private AiChatResponse answerFromBusinessData(String question, Long userId) {
-        if (isOrderQuestion(question)) {
+        if (isOrderLookupQuestion(question)) {
             if (userId == null) {
                 return AiChatResponse.of("你可以登录后让我查询订单状态，也可以到“我的订单”页面查看全部订单。", "BUSINESS", null, null, 1.0);
             }
@@ -289,6 +306,11 @@ public class AiAssistantService {
             return AiChatResponse.of(sb.toString(), "BUSINESS", null, null, 1.0);
         }
 
+        if (isStoreQuestion(question) || isContactQuestion(question)) {
+            AiChatResponse storeResponse = answerStoresAndContact(question);
+            if (storeResponse != null) return storeResponse;
+        }
+
         if (isProductQuestion(question)) {
             List<MallProduct> products = mallProductRepository.findByStatusOrderBySortOrderAsc(1);
             List<MallProduct> matched = products.stream()
@@ -309,24 +331,94 @@ public class AiAssistantService {
 
         if (isServiceQuestion(question)) {
             List<DryService> services = dryServiceRepository.findByStatusOrderBySortOrderAsc(1);
-            List<DryService> matched = services.stream()
-                    .filter(s -> score(question, String.join(" ", nullToEmpty(s.getName()), nullToEmpty(s.getCategory()), nullToEmpty(s.getDescription()), nullToEmpty(s.getSpecs()))) > 0)
-                    .limit(5)
+            List<ServiceMatch> matches = services.stream()
+                    .map(s -> new ServiceMatch(s, serviceMatchScore(question, s)))
+                    .filter(item -> item.score >= SERVICE_MATCH_THRESHOLD)
+                    .sorted(Comparator.comparingInt((ServiceMatch item) -> item.score).reversed())
+                    .limit(4)
                     .collect(Collectors.toList());
-            if (matched.isEmpty()) matched = services.stream().limit(5).collect(Collectors.toList());
-            if (matched.isEmpty()) return null;
-            StringBuilder sb = new StringBuilder("当前可预约的干洗服务有：\n");
-            for (DryService s : matched) {
-                sb.append("- ").append(s.getName()).append("：").append(s.getPrice()).append("元起");
-                if (s.getSpecs() != null && !s.getSpecs().trim().isEmpty()) sb.append("，规格：").append(s.getSpecs());
-                if (s.getCycle() != null && !s.getCycle().trim().isEmpty()) sb.append("，周期：").append(s.getCycle());
-                sb.append("\n");
+
+            if (matches.isEmpty()) {
+                if (isBookingQuestion(question)) {
+                    return AiChatResponse.of("我暂时没有在当前服务列表里匹配到你要洗的项目。你可以到“干洗服务”页面查看全部可预约服务，或联系门店客服确认是否能接单。", "BUSINESS", null, null, 1.0);
+                }
+                return null;
             }
-            sb.append("你可以到“干洗服务”页面选择对应服务预约。");
+
+            StringBuilder sb = new StringBuilder();
+            if (isBookingQuestion(question)) {
+                ServiceMatch best = matches.get(0);
+                if (best.score >= STRONG_SERVICE_MATCH_THRESHOLD) {
+                    DryService s = best.service;
+                    sb.append("可以的，我帮你匹配到“").append(s.getName()).append("”。");
+                    appendServiceLine(sb, s, false);
+                    sb.append("\n请在“干洗服务”页面选择该服务，确认规格、地址和取送时间后提交订单；如果是特殊材质或限量款，建议在备注里写清楚。");
+                    return AiChatResponse.of(sb.toString(), "BUSINESS", null, null, 1.0);
+                }
+                sb.append("可以预约，不过我需要你再确认一下具体项目。当前比较相关的服务有：\n");
+            } else if (isPriceQuestion(question)) {
+                sb.append("我按你的问题找到这些价格信息：\n");
+            } else {
+                sb.append("我按你的问题找到这些洗护服务：\n");
+            }
+
+            for (ServiceMatch match : matches) {
+                appendServiceLine(sb, match.service, true);
+            }
+            sb.append(isBookingQuestion(question) ? "确认后可以到“干洗服务”页面预约下单。" : "你可以到“干洗服务”页面查看详情并预约。");
             return AiChatResponse.of(sb.toString(), "BUSINESS", null, null, 1.0);
         }
 
         return null;
+    }
+
+    private boolean shouldPreferBusinessData(String question) {
+        return isBookingQuestion(question)
+                || isOrderLookupQuestion(question)
+                || isStoreQuestion(question)
+                || isContactQuestion(question)
+                || isSpecificServiceQuestion(question)
+                || isSpecificProductQuestion(question);
+    }
+
+    private AiChatResponse answerStoresAndContact(String question) {
+        StringBuilder sb = new StringBuilder();
+        boolean wrote = false;
+        if (isStoreQuestion(question)) {
+            List<MallStore> stores = mallStoreRepository.findByStatusOrderBySortOrderAsc(1);
+            if (!stores.isEmpty()) {
+                sb.append("当前营业门店：\n");
+                stores.stream().limit(5).forEach(store -> {
+                    sb.append("- ").append(store.getName())
+                            .append("，地址：").append(nullToEmpty(store.getAddress()));
+                    if (store.getPhone() != null && !store.getPhone().trim().isEmpty()) {
+                        sb.append("，电话：").append(store.getPhone());
+                    }
+                    if (store.getBusinessHours() != null && !store.getBusinessHours().trim().isEmpty()) {
+                        sb.append("，营业时间：").append(store.getBusinessHours());
+                    }
+                    sb.append("\n");
+                });
+                wrote = true;
+            }
+        }
+
+        if (isContactQuestion(question)) {
+            List<SysContact> contacts = sysContactRepository.findAll();
+            if (!contacts.isEmpty()) {
+                SysContact contact = contacts.get(0);
+                if (wrote) sb.append("\n");
+                sb.append("客服电话：").append(nullToEmpty(contact.getPhone()));
+                if (contact.getHours() != null && !contact.getHours().trim().isEmpty()) {
+                    sb.append("，服务时间：").append(contact.getHours());
+                }
+                sb.append("。");
+                wrote = true;
+            }
+        }
+
+        if (!wrote) return null;
+        return AiChatResponse.of(sb.toString(), "BUSINESS", null, null, 1.0);
     }
 
     private String buildSiteContext(Long userId) {
@@ -457,16 +549,140 @@ public class AiAssistantService {
         }
     }
 
-    private boolean isOrderQuestion(String question) {
-        return containsAny(question, "订单", "我的预约", "取衣", "送达", "状态", "付款", "支付", "洗好", "完成", "物流");
+    private boolean isOrderLookupQuestion(String question) {
+        return containsAny(question, "我的订单", "查订单", "订单状态", "订单进度", "订单到哪", "我的预约", "洗好了吗", "洗好了", "取衣码", "物流")
+                || (question.contains("订单") && containsAny(question, "状态", "进度", "查询", "查看", "到哪", "完成", "付款", "支付"));
     }
 
     private boolean isServiceQuestion(String question) {
-        return containsAny(question, "干洗", "清洗", "洗衣", "护理", "服务", "羽绒服", "西装", "大衣", "衬衫", "鞋", "箱包", "皮衣", "价格", "多少钱");
+        return containsAny(question, "干洗", "清洗", "洗衣", "护理", "服务", "羽绒服", "西装", "大衣", "衬衫", "鞋", "靴", "箱包", "皮衣", "价格", "多少钱", "多久")
+                || isBookingQuestion(question);
     }
 
     private boolean isProductQuestion(String question) {
         return containsAny(question, "商品", "商城", "购买", "买", "洗衣液", "护理剂", "库存", "用品");
+    }
+
+    private boolean isBookingQuestion(String question) {
+        return containsAny(question, SERVICE_ACTION_WORDS.toArray(new String[0]));
+    }
+
+    private boolean isPriceQuestion(String question) {
+        return containsAny(question, "价格", "多少钱", "收费", "费用", "几块", "几元", "价钱");
+    }
+
+    private boolean isStoreQuestion(String question) {
+        return containsAny(question, "门店", "附近", "地址", "营业时间", "在哪里", "在哪儿", "到店");
+    }
+
+    private boolean isContactQuestion(String question) {
+        return containsAny(question, "电话", "客服", "人工", "联系", "投诉", "微信");
+    }
+
+    private boolean isSpecificServiceQuestion(String question) {
+        return isServiceQuestion(question) && !containsAny(question, "有哪些服务", "全部服务", "服务列表");
+    }
+
+    private boolean isSpecificProductQuestion(String question) {
+        return isProductQuestion(question) && containsAny(question, "洗衣液", "护理剂", "去渍", "柔顺", "喷雾", "库存", "多少钱", "价格");
+    }
+
+    private int serviceMatchScore(String question, DryService service) {
+        String q = compact(question);
+        String name = compact(service.getName());
+        String coreName = stripServiceWords(name);
+        String category = compact(service.getCategory());
+        String specs = compact(service.getSpecs());
+        String description = compact(service.getDescription());
+        int value = 0;
+
+        if (!name.isEmpty() && q.contains(name)) value += 120;
+        if (coreName.length() >= 2 && q.contains(coreName)) value += 95;
+        if (!category.isEmpty() && q.contains(category)) value += 24;
+        if (specsContainQuestionTerm(q, service.getSpecs())) value += 65;
+        if (descriptionContainsQuestionTerm(q, service.getDescription())) value += 25;
+
+        if ("鞋类".equals(service.getCategory()) && containsAny(q, "鞋", "洗鞋", "球鞋", "运动鞋", "跑步鞋", "篮球鞋")) value += 36;
+        if ("衣物".equals(service.getCategory()) && containsAny(q, "衣服", "衣物", "洗衣", "干洗")) value += 24;
+
+        Set<String> qTokens = serviceTokens(q);
+        Set<String> sTokens = serviceTokens(String.join(" ", name, coreName, category, specs, description));
+        for (String token : qTokens) {
+            if (!isGenericServiceToken(token) && sTokens.contains(token)) value += token.length() >= 3 ? 16 : 10;
+        }
+
+        return value;
+    }
+
+    private boolean specsContainQuestionTerm(String compactQuestion, String specs) {
+        if (specs == null || specs.trim().isEmpty()) return false;
+        for (String part : specs.split("[;；]")) {
+            String name = compact(part.split("\\|")[0]);
+            String core = stripServiceWords(name);
+            if ((name.length() >= 2 && compactQuestion.contains(name)) || (core.length() >= 2 && compactQuestion.contains(core))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean descriptionContainsQuestionTerm(String compactQuestion, String description) {
+        if (description == null || description.trim().isEmpty()) return false;
+        for (String token : serviceTokens(description)) {
+            if (!isGenericServiceToken(token) && token.length() >= 2 && compactQuestion.contains(token)) return true;
+        }
+        return false;
+    }
+
+    private Set<String> serviceTokens(String text) {
+        Set<String> tokens = new HashSet<>();
+        String cleaned = compact(text);
+        for (int i = 0; i < cleaned.length() - 1; i++) {
+            String token = cleaned.substring(i, i + 2);
+            if (token.chars().allMatch(c -> (c >= 0x4e00 && c <= 0x9fa5) || Character.isLetterOrDigit(c))) {
+                tokens.add(token);
+            }
+        }
+        for (String token : cleaned.split("[^\\p{IsHan}a-z0-9]+")) {
+            if (token.length() >= 2) tokens.add(token);
+        }
+        return tokens;
+    }
+
+    private boolean isGenericServiceToken(String token) {
+        return GENERIC_SERVICE_TOKENS.contains(token);
+    }
+
+    private void appendServiceLine(StringBuilder sb, DryService s, boolean bullet) {
+        if (bullet) sb.append("- ");
+        sb.append(s.getName()).append("：").append(s.getPrice()).append("元起");
+        String specs = formatSpecs(s.getSpecs());
+        if (!specs.isEmpty()) sb.append("，规格：").append(specs);
+        if (s.getCycle() != null && !s.getCycle().trim().isEmpty()) sb.append("，周期：").append(s.getCycle());
+        sb.append("\n");
+    }
+
+    private String formatSpecs(String specs) {
+        if (specs == null || specs.trim().isEmpty()) return "";
+        return Arrays.stream(specs.split("[;；]"))
+                .map(String::trim)
+                .filter(item -> !item.isEmpty())
+                .map(item -> {
+                    String[] parts = item.split("\\|", 2);
+                    if (parts.length == 2 && !parts[0].trim().isEmpty() && !parts[1].trim().isEmpty()) {
+                        return parts[0].trim() + parts[1].trim() + "元";
+                    }
+                    return item.replace("|", "");
+                })
+                .collect(Collectors.joining("、"));
+    }
+
+    private String stripServiceWords(String text) {
+        return text.replaceAll("干洗|清洗|精洗|洗护|护理|保养|翻新|修复|服务", "");
+    }
+
+    private String compact(String text) {
+        return normalize(text).replaceAll("[，。！？、；：,.!?;:\\s]+", "");
     }
 
     private boolean containsAny(String text, String... words) {
@@ -571,6 +787,16 @@ public class AiAssistantService {
 
         private MatchResult(AiKnowledge knowledge, double score) {
             this.knowledge = knowledge;
+            this.score = score;
+        }
+    }
+
+    private static class ServiceMatch {
+        private final DryService service;
+        private final int score;
+
+        private ServiceMatch(DryService service, int score) {
+            this.service = service;
             this.score = score;
         }
     }

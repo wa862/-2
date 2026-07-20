@@ -113,6 +113,18 @@ public class CartService {
     }
 
     @Transactional
+    public CartItemDTO updateServiceSpec(Long userId, Long id, String serviceSpecName, Integer quantity) {
+        Optional<CartItem> opt = cartItemRepository.findById(id);
+        if (opt.isEmpty() || !opt.get().getUserId().equals(userId)) return null;
+        CartItem c = opt.get();
+        if (!"SERVICE".equals(c.getItemType()) || c.getServiceId() == null) return null;
+        c.setServiceSpecName(normalizeSpecName(serviceSpecName));
+        if (quantity != null && quantity >= 1) c.setQuantity(quantity);
+        cartItemRepository.save(c);
+        return toDTO(c);
+    }
+
+    @Transactional
     public void remove(Long userId, Long id) {
         cartItemRepository.findById(id).ifPresent(c -> {
             if (c.getUserId().equals(userId)) cartItemRepository.delete(c);

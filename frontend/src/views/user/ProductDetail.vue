@@ -1,6 +1,6 @@
 <template>
   <div class="detail-page">
-    <el-button link type="primary" @click="$router.push('/home/user/product')" class="back">← 返回商城</el-button>
+    <el-button link type="primary" @click="goBack" class="back">← 返回</el-button>
     <div v-if="loading" class="loading"><el-icon class="is-loading"><Loading /></el-icon> 加载中...</div>
     <div v-else-if="product" class="detail-card">
       <div class="detail-img">
@@ -19,8 +19,13 @@
         <div v-if="product.description" class="detail-desc">{{ product.description }}</div>
         <div v-else class="detail-desc">专业洗护商品，品质保证。</div>
         <div class="detail-meta">分类：{{ product.category }} · 库存 {{ product.stock }}</div>
+        
         <el-input-number v-model="quantity" :min="1" :max="product.stock || 999" class="qty-input" />
-        <el-button type="primary" size="large" @click="addCart">加入购物车</el-button>
+        
+        <div class="detail-actions">
+          <el-button v-if="isFromCart" type="primary" size="large" @click="updateCart">更新购物车</el-button>
+          <el-button v-else type="primary" size="large" @click="addCart">加入购物车</el-button>
+        </div>
 
         <CommentSection :target-type="'PRODUCT'" :target-id="product.id" collapsed :preview-count="1" />
       </div>
@@ -35,7 +40,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getProductDetail } from '@/api/product'
-import { addToCart } from '@/api/cart'
+import { addToCart, removeCartItem } from '@/api/cart'
 import { useUserStore } from '@/stores/user'
 import CommentSection from '@/components/CommentSection.vue'
 import type { ProductItem } from '@/api/product'
@@ -48,17 +53,38 @@ const loading = ref(true)
 const quantity = ref(1)
 
 const id = computed(() => Number(route.params.id))
+const cartId = computed(() => Number(route.query.cartId))
+const isFromCart = computed(() => cartId.value > 0)
+
+function syncQuantityFromRoute() {
+  const q = route.query.quantity
+  if (typeof q === 'string') {
+    const max = product.value?.stock || 999
+    quantity.value = Math.max(1, Math.min(max, Number(q) || 1))
+  }
+}
 
 onMounted(async () => {
   if (!id.value) return
   loading.value = true
   try {
     product.value = await getProductDetail(id.value)
+    if (product.value) {
+      syncQuantityFromRoute()
+    }
   } catch (_) {
     product.value = null
   }
   loading.value = false
 })
+
+function goBack() {
+  if (isFromCart.value) {
+    router.push('/home/user/cart')
+  } else {
+    router.push('/home/user/product')
+  }
+}
 
 function addCart() {
   if (!product.value) return
@@ -76,6 +102,20 @@ function addCart() {
   })
 }
 
+async function updateCart() {
+  if (!product.value || cartId.value <= 0) return
+  loading.value = true
+  try {
+    await removeCartItem(cartId.value)
+    await addToCart('PRODUCT', product.value.id, undefined, quantity.value)
+    ElMessage.success('购物车已更新')
+    router.push('/home/user/cart')
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || '更新失败')
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -92,4 +132,5 @@ function addCart() {
 .detail-desc { color: #606266; line-height: 1.6; margin-bottom: 12px; }
 .detail-meta { font-size: 18px; color: #909399; margin-bottom: 20px; }
 .qty-input { margin-right: 12px; margin-bottom: 16px; }
+.detail-actions { margin-bottom: 20px; }
 </style>

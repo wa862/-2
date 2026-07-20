@@ -75,4 +75,5 @@ export const createProductOrder = (
 
 export const myOrders = (page = 0, size = 20) =>
   request<OrderItem[]>({ url: '/order/my', params: { page, size } })
+export const getOrderDetail = (id: number) => request<OrderItem>({ url: `/order/${id}` })
 export const cancelOrder = (id: number) => request<OrderItem>({ url: `/order/${id}/cancel`, method: 'POST' })

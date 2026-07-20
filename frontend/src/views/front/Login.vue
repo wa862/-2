@@ -101,63 +101,63 @@ async function onSubmit() {
   padding: 40px 32px;
 }
 .hero-logo {
-  width: 56px;
-  height: 56px;
-  border-radius: 28px;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
   background: rgba(255, 255, 255, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
-  margin-bottom: 18px;
+  font-size: 24px;
+  margin-bottom: 14px;
 }
 .hero-title {
-  font-size: 30px;
+  font-size: 22px;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .hero-subtitle {
-  font-size: 18px;
+  font-size: 14px;
   opacity: 0.9;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 .hero-list {
   list-style: none;
   padding: 0;
   margin: 0;
-  font-size: 18px;
-  line-height: 1.9;
+  font-size: 14px;
+  line-height: 1.6;
 }
 .auth-right {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 24px;
+  padding: 32px 20px;
 }
 .auth-card {
-  width: 380px;
-  border-radius: 16px;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+  width: 340px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 .auth-title {
   text-align: center;
-  font-size: 26px;
+  font-size: 18px;
   font-weight: 600;
   color: #303133;
   margin-bottom: 4px;
 }
 .auth-desc {
   text-align: center;
-  font-size: 18px;
+  font-size: 14px;
   color: #909399;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 .auth-btn {
   width: 100%;
-  height: 40px;
-  border-radius: 8px;
-  font-size: 20px;
+  height: 36px;
+  border-radius: 6px;
+  font-size: 14px;
   font-weight: 600;
 }
 .auth-btn:hover {
@@ -167,9 +167,9 @@ async function onSubmit() {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 18px;
+  font-size: 14px;
   color: #909399;
-  margin-top: -8px;
+  margin-top: -6px;
 }
 .link {
   color: #409eff;

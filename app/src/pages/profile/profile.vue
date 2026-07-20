@@ -94,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { getAddressList, type UserAddressItem } from '@/api/address'
@@ -140,7 +140,6 @@ function logout() {
 }
 
 onShow(loadAddresses)
-onMounted(loadAddresses)
 </script>
 
 <style scoped lang="scss">

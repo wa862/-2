@@ -1,7 +1,7 @@
 <template>
   <div class="home-page">
     <section class="banner">
-      <el-carousel height="420px" indicator-position="outside">
+      <el-carousel height="220px" indicator-position="outside">
         <el-carousel-item v-for="(b, i) in banners" :key="i">
           <div class="banner-item" @click="onBannerClick(b)">
             <img v-if="b.image" :src="b.image" alt="" class="banner-img" />
@@ -294,6 +294,7 @@ onMounted(async () => {
   border-radius: 8px;
   overflow: hidden;
   max-width: 1100px; /* 控制轮播整体左右宽度 */
+  background: #fff;
 }
 .banner-item {
   height: 100%;
@@ -306,29 +307,29 @@ onMounted(async () => {
 .banner-img {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* 填满整个区域，视觉上更大 */
+  object-fit: contain; /* 完整展示整张横幅，不裁切左右内容 */
   display: block;
 }
 .banner-text { text-align: center; color: #fff; }
-.banner-text h2 { font-size: 32px; margin-bottom: 12px; }
-.banner-text p { margin-bottom: 20px; opacity: 0.9; }
-.banner-btn { border-radius: 20px; padding: 10px 28px; }
-.entrances, .section { background: #fff; border-radius: 8px; padding: 24px; margin-bottom: 16px; }
-.section-title { margin-bottom: 16px; font-size: 22px; color: #303133; }
+.banner-text h2 { font-size: 18px; margin-bottom: 8px; }
+.banner-text p { margin-bottom: 12px; opacity: 0.9; font-size: 13px; }
+.banner-btn { border-radius: 12px; padding: 6px 16px; font-size: 13px; }
+.entrances, .section { background: #fff; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+.section-title { margin-bottom: 12px; font-size: 14px; color: #303133; }
 .entrance-card { cursor: pointer; text-align: center; }
-.entrance-icon { font-size: 40px; margin-bottom: 8px; }
-.entrance-name { font-size: 20px; }
+.entrance-icon { font-size: 28px; margin-bottom: 6px; }
+.entrance-name { font-size: 13px; }
 .service-card, .product-card { cursor: pointer; }
-.service-name, .product-name { font-weight: 500; margin-bottom: 8px; }
-.service-price, .product-price { color: #ff4d4f; font-weight: bold; margin-bottom: 8px; }
+.service-name, .product-name { font-weight: 500; margin-bottom: 6px; font-size: 13px; }
+.service-price, .product-price { color: #ff4d4f; font-weight: bold; margin-bottom: 6px; font-size: 14px; }
 
 .product-img-wrap {
   width: 100%;
   aspect-ratio: 4/3;
-  border-radius: 8px;
+  border-radius: 6px;
   overflow: hidden;
   background: #f5f7fa;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 .product-img {
   width: 100%;
@@ -339,17 +340,17 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 600;
   color: #c0c4cc;
 }
 .detail-dialog .detail-img {
   width: 100%;
-  height: 200px;
-  border-radius: 8px;
+  height: 160px;
+  border-radius: 6px;
   overflow: hidden;
   background: #f5f7fa;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 .detail-dialog .detail-img img {
   width: 100%;
@@ -363,65 +364,66 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   color: #909399;
+  font-size: 13px;
 }
 .detail-name {
-  font-size: 22px;
+  font-size: 14px;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .detail-price {
-  font-size: 26px;
+  font-size: 16px;
   color: #ff4d4f;
   font-weight: bold;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 .detail-desc {
-  font-size: 18px;
+  font-size: 13px;
   color: #606266;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   line-height: 1.5;
 }
 .detail-actions {
   display: flex;
-  gap: 12px;
+  gap: 8px;
 }
 .footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 32px;
+  padding: 20px;
   color: #909399;
-  font-size: 18px;
+  font-size: 12px;
   background: #fff;
   border-radius: 8px;
 }
 .footer-left div {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .footer-right {
   text-align: left;
 }
 .footer-kefu-title {
-  font-size: 18px;
-  margin-bottom: 8px;
+  font-size: 13px;
+  margin-bottom: 6px;
   color: #606266;
 }
 .footer-kefu-box {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 .footer-kefu-qr {
-  width: 72px;
-  height: 72px;
+  width: 56px;
+  height: 56px;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 12px;
   color: #909399;
   text-align: center;
-  padding: 4px;
+  padding: 3px;
 }
 .footer-kefu-qr-img {
   width: 100%;
@@ -430,11 +432,12 @@ onMounted(async () => {
   border-radius: 4px;
 }
 .footer-kefu-text {
-  font-size: 18px;
+  font-size: 13px;
   color: #606266;
 }
 .footer-kefu-sub {
   color: #909399;
-  margin-top: 4px;
+  margin-top: 3px;
+  font-size: 11px;
 }
 </style>

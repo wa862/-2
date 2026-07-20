@@ -35,4 +35,10 @@ export const addToCart = (
 export const getCartList = () => request<CartItem[]>({ url: '/cart/list' })
 export const updateCartQuantity = (id: number, quantity: number) =>
   request<CartItem>({ url: `/cart/${id}`, method: 'PUT', params: { quantity } })
+export const updateCartServiceSpec = (id: number, serviceSpecName?: string, quantity?: number) =>
+  request<CartItem>({
+    url: `/cart/${id}/service-spec`,
+    method: 'PUT',
+    params: { serviceSpecName: serviceSpecName || '', quantity },
+  })
 export const removeCartItem = (id: number) => request({ url: `/cart/${id}`, method: 'DELETE' })

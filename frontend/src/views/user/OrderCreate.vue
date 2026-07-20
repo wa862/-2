@@ -86,11 +86,14 @@
             @click="selectedAddressId = a.id"
             @dblclick="openAddressForm(a)"
           >
-            <el-radio :label="a.id">
-              <span class="addr-text">{{ a.contactName }} {{ maskPhone(a.phone) }}</span>
+            <el-radio :label="a.id" />
+            <div class="address-content">
+              <div class="address-header">
+                <span class="addr-text">{{ a.contactName }} {{ maskPhone(a.phone) }}</span>
+                <span v-if="a.isDefault" class="default-tag">默认</span>
+              </div>
               <span class="addr-detail">{{ fullAddress(a) }}</span>
-            </el-radio>
-            <span v-if="a.isDefault" class="default-tag">默认</span>
+            </div>
             <div class="addr-actions" @click.stop>
               <el-button link type="primary" size="small" @click="openAddressForm(a)">编辑</el-button>
               <el-button link type="danger" size="small" @click="onDeleteAddress(a.id)">删除</el-button>
@@ -934,24 +937,59 @@ async function submit() {
   color: #2D2A27;
 }
 .hint { font-size: 19px; color: #8F7F70; margin-top: 8px; }
-.address-section .address-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.address-section .address-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 14px; }
 .address-section .address-item {
-  padding: 10px 12px; border: 1px solid #F0E9E2; border-radius: 12px; cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid #F0E9E2;
+  border-radius: 16px;
+  cursor: pointer;
   position: relative;
+  transition: all 0.2s;
+  background: #FFFFFF;
+}
+.address-section .address-item:hover { border-color: #DCD2C9; }
+.address-section .address-item.active { border-color: #4A3F38; background: #F9F5F0; }
+.address-section .address-item :deep(.el-radio) { margin-top: 2px; flex-shrink: 0; }
+.address-section .address-content {
+  flex: 1;
+  min-width: 0;
+  padding-right: 90px;
+}
+.address-section .address-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.address-section .addr-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: #2D2A27;
+}
+.address-section .addr-detail {
+  font-size: 14px;
+  color: #8F7F70;
+  line-height: 1.5;
+}
+.address-section .default-tag {
+  font-size: 12px;
+  color: #C17C5A;
+  padding: 2px 8px;
+  background: #FFF5EF;
+  border-radius: 4px;
+  font-weight: 500;
 }
 .address-section .addr-actions {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
+  right: 18px;
+  top: 18px;
   display: inline-flex;
-  gap: 6px;
+  gap: 12px;
 }
-.address-section .address-item.active { border-color: #4A3F38; background: #F9F5F0; }
-.address-section .address-item :deep(.el-radio__label) { display: flex; flex-direction: column; gap: 2px; }
-.address-section .addr-text { font-size: 21px; font-weight: 500; color: #2D2A27; }
-.address-section .addr-detail { font-size: 19px; color: #8F7F70; }
-.address-section .default-tag { font-size: 18px; color: #C17C5A; }
-.address-section .add-addr-btn { width: 100%; border-radius: 12px; }
+.address-section .add-addr-btn { width: 100%; border-radius: 16px; font-size: 14px; padding: 12px; }
 .delivery-group { display: flex; gap: 16px; }
 .remark-input { border-radius: 12px; }
 .addr-inline-row {

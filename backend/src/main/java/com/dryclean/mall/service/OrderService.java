@@ -162,6 +162,34 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public OrderDTO detail(Long userId, Long orderId) {
+        OrderInfo order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("订单不存在"));
+        if (!order.getUserId().equals(userId)) {
+            throw new RuntimeException("无权查看该订单");
+        }
+        OrderDTO dto = OrderDTO.fromEntity(order);
+        if ("PRODUCT".equals(order.getOrderType())) {
+            if (order.getProductId() != null) {
+                MallProduct p = productRepository.findById(order.getProductId()).orElse(null);
+                dto.setProductName(p != null ? p.getName() : null);
+                dto.setProductImage(p != null ? p.getImage() : null);
+            }
+        } else {
+            if (order.getServiceId() != null) {
+                DryService s = serviceRepository.findById(order.getServiceId()).orElse(null);
+                dto.setServiceName(s != null ? s.getName() : null);
+                dto.setServiceImage(s != null ? s.getImage() : null);
+            }
+        }
+        if (order.getStoreId() != null) {
+            storeRepository.findById(order.getStoreId()).ifPresent(s -> dto.setStoreName(s.getName()));
+        }
+        dto.setHasComment(commentRepository.existsByOrderIdAndUserId(order.getId(), userId));
+        return dto;
+    }
+
     @Transactional
     public OrderDTO pay(Long userId, Long orderId) {
         OrderInfo order = orderRepository.findById(orderId)

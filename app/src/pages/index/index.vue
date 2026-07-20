@@ -3,7 +3,7 @@
     <swiper class="banner" circular autoplay indicator-dots>
       <swiper-item v-for="(b, i) in banners" :key="i">
         <view class="banner-item" @click="onBannerClick(b)">
-          <image v-if="imageOf(b.image)" :src="imageOf(b.image)" mode="aspectFill" class="banner-img" />
+          <image v-if="imageOf(b.image)" :src="imageOf(b.image)" mode="aspectFit" class="banner-img" />
           <view v-else class="banner-text">
             <text class="banner-title">{{ b.title }}</text>
             <text class="banner-sub">{{ b.subtitle }}</text>
@@ -84,8 +84,24 @@ import { getBanners, getContactConfig, getHomeModules, type BannerItem, type Con
 import { resolveImageUrl } from '@/utils'
 
 const defaultBanners: BannerItem[] = [
-  { title: '专业干洗 · 上门取件', subtitle: '48小时送回' },
-  { title: '干洗商城 · 护理用品', subtitle: '洗护用品放心选' },
+  {
+    image: '/static/banners/dry-clean-blue.svg',
+    title: '专业干洗 洁净如新',
+    subtitle: '专业设备 · 精细护理 · 上门取送',
+    link: '/pages/service/list',
+  },
+  {
+    image: '/static/banners/laundry-green.svg',
+    title: '绿色洗护 呵护健康',
+    subtitle: '天然配方 · 温和洁净 · 呵护全家',
+    link: '/pages/product/list',
+  },
+  {
+    image: '/static/banners/pickup-orange.svg',
+    title: '一键下单 上门取送',
+    subtitle: '足不出户 · 轻松享受 · 省时省力',
+    link: '/pages/service/list',
+  },
 ]
 
 const defaultHotServices = [
@@ -142,6 +158,8 @@ function productInitial(name?: string) {
 
 function imageOf(url?: string) {
   if (!url || url.includes('th.bing.com')) return ''
+  if (url.startsWith('/static/')) return url
+  if (url.startsWith('/banners/')) return url.replace('/banners/', '/static/banners/')
   return resolveImageUrl(url)
 }
 
@@ -177,7 +195,12 @@ async function loadHome() {
   }
   try {
     const bs = await getBanners()
-    if (Array.isArray(bs) && bs.length) banners.value = bs
+    if (Array.isArray(bs) && bs.length) {
+      banners.value = bs.map((b) => ({
+        ...b,
+        image: imageOf(b.image) || b.image,
+      }))
+    }
   } catch {
     banners.value = defaultBanners
   }
@@ -198,8 +221,23 @@ onShow(loadHome)
   box-sizing: border-box;
   background: linear-gradient(180deg, #f7fbff 0%, #f4f7fb 100%);
 }
-.banner { height: 236rpx; border-radius: 16rpx; overflow: hidden; margin-bottom: 18rpx; }
-.banner-item, .banner-img { width: 100%; height: 100%; }
+.banner {
+  height: 286rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+  margin-bottom: 18rpx;
+  background: #fff;
+}
+.banner-item {
+  width: 100%;
+  height: 100%;
+  background: #fff;
+}
+.banner-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
 .banner-text {
   height: 100%;
   display: flex;

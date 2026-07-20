@@ -11,8 +11,11 @@
     </scroll-view>
 
     <view v-if="loading" class="empty-wrap">加载中...</view>
-    <view v-else-if="!filteredList.length" class="empty-wrap">暂无订单</view>
-    <view v-for="order in filteredList" :key="order.id" class="card order-card">
+    <view v-else-if="!filteredList.length" class="empty-wrap">
+      <text class="empty-title">暂无订单</text>
+      <button class="empty-btn" @click="goService">去预约下单</button>
+    </view>
+    <view v-for="order in filteredList" :key="order.id" class="card order-card" @click="goDetail(order.id)">
       <view class="head">
         <text>{{ formatTime(order.createdAt) }}</text>
         <text class="status">{{ statusText(order) }}</text>
@@ -34,12 +37,12 @@
       <view class="foot">
         <text>实付款 ¥{{ order.totalPrice }}</text>
         <view class="actions">
-          <button v-if="order.payStatus==='UNPAID' && order.status!=='CANCELLED'" size="mini" @click="cancel(order.id)">取消</button>
-          <button v-if="order.payStatus==='UNPAID' && order.status!=='CANCELLED'" size="mini" type="primary" @click="pay(order.id)">去支付</button>
+          <button v-if="order.payStatus==='UNPAID' && order.status!=='CANCELLED'" size="mini" @click.stop="cancel(order.id)">取消</button>
+          <button v-if="order.payStatus==='UNPAID' && order.status!=='CANCELLED'" size="mini" type="primary" @click.stop="pay(order.id)">去支付</button>
           <button
             v-if="order.status==='COMPLETED' && !order.hasComment"
             size="mini"
-            @click="openEval(order)"
+            @click.stop="openEval(order)"
           >评价</button>
         </view>
       </view>
@@ -60,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { myOrders, cancelOrder, type OrderItem } from '@/api/order'
 import { createPayment } from '@/api/payment'
@@ -101,6 +104,19 @@ function orderName(o: OrderItem) {
 }
 function orderImage(o: OrderItem) {
   return o.orderType === 'PRODUCT' ? o.productImage : o.serviceImage
+}
+
+function goDetail(id: number) {
+  uni.navigateTo({
+    url: '/pages/order/detail?id=' + id,
+    fail: (err) => {
+      uni.showToast({ title: (err && err.errMsg) || '打开订单详情失败', icon: 'none' })
+    },
+  })
+}
+
+function goService() {
+  uni.switchTab({ url: '/pages/service/list' })
 }
 
 function statusText(order: OrderItem) {
@@ -162,7 +178,6 @@ async function submitEval() {
 }
 
 onShow(load)
-onMounted(load)
 </script>
 
 <style scoped lang="scss">
@@ -323,8 +338,22 @@ onMounted(load)
 .textarea { width: 100%; min-height: 160rpx; background: #f5f7fa; border-radius: 8rpx; padding: 16rpx; margin: 20rpx 0; box-sizing: border-box; }
 .empty-wrap {
   padding: 120rpx 24rpx;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24rpx;
   color: #909399;
   font-size: 28rpx;
 }
+.empty-title { color: #909399; }
+.empty-btn {
+  width: 230rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+  border-radius: 999rpx;
+  color: #fff;
+  background: #2474ff;
+  font-size: 28rpx;
+}
+.empty-btn::after { border: 0; }
 </style>

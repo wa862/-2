@@ -47,6 +47,20 @@ public class CartController {
         return dto != null ? ResponseEntity.ok(dto) : ResponseEntity.notFound().build();
     }
 
+    @PutMapping("/{id}/service-spec")
+    public ResponseEntity<CartItemDTO> updateServiceSpec(
+            Authentication auth,
+            @PathVariable Long id,
+            @RequestParam(required = false) String serviceSpecName,
+            @RequestParam(required = false) Integer quantity) {
+        if (auth == null || auth.getPrincipal() == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Long userId = (Long) auth.getPrincipal();
+        CartItemDTO dto = cartService.updateServiceSpec(userId, id, serviceSpecName, quantity);
+        return dto != null ? ResponseEntity.ok(dto) : ResponseEntity.notFound().build();
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> remove(Authentication auth, @PathVariable Long id) {
         if (auth == null || auth.getPrincipal() == null) {

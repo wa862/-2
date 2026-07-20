@@ -30,9 +30,11 @@
         <text class="dialog-title">{{ editingAddressId ? '编辑地址' : '新增地址' }}</text>
         <input v-model="addressForm.contactName" class="input" placeholder="收货人" />
         <input v-model="addressForm.phone" class="input" type="number" maxlength="11" placeholder="手机号" />
-        <input v-model="addressForm.province" class="input" placeholder="省" />
-        <input v-model="addressForm.city" class="input" placeholder="市" />
-        <input v-model="addressForm.district" class="input" placeholder="区" />
+        <picker mode="region" :value="regionValue" @change="onRegionChange">
+          <view class="input picker-input" :class="{ placeholder: !regionText }">
+            {{ regionText || '请选择省/市/区' }}
+          </view>
+        </picker>
         <textarea v-model="addressForm.detailAddress" class="textarea" placeholder="详细地址" />
         <label class="check"><checkbox :checked="addressForm.isDefault" @click="addressForm.isDefault=!addressForm.isDefault" />设为默认</label>
         <button class="primary-btn" :loading="addressSaving" @click="saveAddress">保存</button>
@@ -43,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import {
   getAddressList, createAddress, updateAddress, removeAddress,
@@ -59,6 +61,17 @@ const addressForm = ref<AddressCreateParams>({
   contactName: '', phone: '', province: '', city: '', district: '', detailAddress: '', isDefault: false,
 })
 
+const regionValue = computed(() => [
+  addressForm.value.province || '',
+  addressForm.value.city || '',
+  addressForm.value.district || '',
+])
+
+const regionText = computed(() => {
+  const parts = regionValue.value.filter(Boolean)
+  return parts.length ? parts.join(' / ') : ''
+})
+
 async function loadAddresses() {
   try { addressList.value = await getAddressList() } catch {}
 }
@@ -71,8 +84,22 @@ function openAddressForm(a?: UserAddressItem) {
   addressFormVisible.value = true
 }
 
+function onRegionChange(e: any) {
+  const value = e && e.detail && Array.isArray(e.detail.value) ? e.detail.value : []
+  addressForm.value.province = value[0] || ''
+  addressForm.value.city = value[1] || ''
+  addressForm.value.district = value[2] || ''
+}
+
 async function saveAddress() {
-  if (!addressForm.value.contactName || !addressForm.value.phone || !addressForm.value.detailAddress) {
+  if (
+    !addressForm.value.contactName ||
+    !addressForm.value.phone ||
+    !addressForm.value.province ||
+    !addressForm.value.city ||
+    !addressForm.value.district ||
+    !addressForm.value.detailAddress
+  ) {
     return uni.showToast({ title: '请填写完整信息', icon: 'none' })
   }
   addressSaving.value = true
@@ -232,11 +259,18 @@ onMounted(loadAddresses)
 }
 .input {
   height: 82rpx;
+  line-height: 82rpx;
   padding: 0 22rpx;
   border-radius: 12rpx;
   background: #f5f7fa;
   margin-bottom: 16rpx;
   font-size: 28rpx;
+}
+.picker-input {
+  color: #1f2533;
+}
+.picker-input.placeholder {
+  color: #909399;
 }
 .textarea {
   width: 100%;

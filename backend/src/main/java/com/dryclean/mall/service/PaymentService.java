@@ -1,5 +1,6 @@
 package com.dryclean.mall.service;
 
+import com.dryclean.mall.dto.BatchPaymentDTO;
 import com.dryclean.mall.dto.PaymentDTO;
 import com.dryclean.mall.entity.OrderInfo;
 import com.dryclean.mall.entity.PaymentRecord;
@@ -45,6 +46,18 @@ public class PaymentService {
         return PaymentDTO.fromEntity(p, order.getOrderNo());
     }
 
+    @Transactional
+    public BatchPaymentDTO createPayments(Long userId, List<Long> orderIds) {
+        if (orderIds == null || orderIds.isEmpty()) {
+            throw new RuntimeException("请选择需要支付的订单");
+        }
+        List<PaymentDTO> payments = orderIds.stream()
+                .distinct()
+                .map(orderId -> createPayment(userId, orderId))
+                .toList();
+        return BatchPaymentDTO.of(payments);
+    }
+
     public PaymentDTO getPayment(Long userId, Long paymentId) {
         PaymentRecord p = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new RuntimeException("支付单不存在"));
@@ -85,5 +98,17 @@ public class PaymentService {
         orderRepository.save(order);
         notificationService.create(userId, "支付成功", "订单 " + order.getOrderNo() + " 已支付成功。", "ORDER", order.getId());
         return PaymentDTO.fromEntity(p, order.getOrderNo());
+    }
+
+    @Transactional
+    public BatchPaymentDTO confirmPayments(Long userId, List<Long> paymentIds, String payMethod) {
+        if (paymentIds == null || paymentIds.isEmpty()) {
+            throw new RuntimeException("请选择需要支付的订单");
+        }
+        List<PaymentDTO> payments = paymentIds.stream()
+                .distinct()
+                .map(paymentId -> confirmPayment(userId, paymentId, payMethod))
+                .toList();
+        return BatchPaymentDTO.of(payments);
     }
 }

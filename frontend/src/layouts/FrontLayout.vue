@@ -163,30 +163,30 @@ function handleAiClick() {
   z-index: 100;
   display: flex;
   align-items: center;
-  min-height: 72px;
-  padding: 0 34px;
+  min-height: 56px;
+  padding: 0 24px;
   background: #fff;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 .brand {
-  font-size: 25px;
+  font-size: 18px;
   font-weight: 600;
   color: #409eff;
   text-decoration: none;
-  margin-right: 34px;
+  margin-right: 24px;
   white-space: nowrap;
 }
-.search-box { width: 320px; margin-right: 24px; }
+.search-box { width: 240px; margin-right: 16px; }
 .nav-menu {
   flex: 1;
   border: none;
-  min-height: 72px;
+  min-height: 56px;
 }
 .nav-menu :deep(.el-menu-item) {
-  height: 72px;
-  line-height: 72px;
-  padding: 0 18px;
-  font-size: 18px;
+  height: 56px;
+  line-height: 56px;
+  padding: 0 14px;
+  font-size: 14px;
 }
 .right { display: flex; align-items: center; gap: 16px; }
 .user-avatar-wrapper {

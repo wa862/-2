@@ -41,12 +41,12 @@
 
     <div v-loading="loading" class="order-list">
       <template v-if="filteredList.length">
-        <div v-for="order in filteredList" :key="order.id" class="order-card">
+        <div v-for="order in filteredList" :key="order.id" class="order-card" @click="goOrderDetail(order.id)">
           <div class="order-card-head">
             <span class="order-time">{{ formatTime(order.createdAt) }}</span>
             <span class="order-status-wrap">
               <span class="order-status">{{ statusText(order) }}</span>
-              <el-icon v-if="isCompleted(order)" class="delete-icon" @click="removeOrder(order.id)">
+              <el-icon v-if="isCompleted(order)" class="delete-icon" @click.stop="removeOrder(order.id)">
                 <Delete />
               </el-icon>
             </span>
@@ -74,8 +74,8 @@
             <span class="order-summary">共 {{ order.quantity }} 件商品 实付款 <em>¥{{ order.totalPrice }}</em></span>
             <div class="order-actions">
               <template v-if="order.payStatus === 'UNPAID' && !isCancelled(order)">
-                <el-button size="small" @click="cancel(order.id)">取消订单</el-button>
-                <el-button type="primary" size="small" @click="pay(order.id)">去支付</el-button>
+                <el-button size="small" @click.stop="cancel(order.id)">取消订单</el-button>
+                <el-button type="primary" size="small" @click.stop="pay(order.id)">去支付</el-button>
               </template>
               <el-button
                 v-else-if="
@@ -84,7 +84,7 @@
                   ((order.orderType || 'SERVICE') === 'PRODUCT' ? !!order.productId : !!order.serviceId)
                 "
                 size="small"
-                @click="onEvaluate(order)"
+                @click.stop="onEvaluate(order)"
               >
                 {{ (order.orderType || 'SERVICE') === 'PRODUCT' ? '评价商品' : '评价服务' }}
               </el-button>
@@ -180,6 +180,10 @@ function removeOrder(_id: number) {
   ElMessage.info('删除订单功能可后续对接接口')
 }
 
+function goOrderDetail(orderId: number) {
+  router.push(`/home/user/order/detail/${orderId}`)
+}
+
 function onEvaluate(order: OrderItem) {
   evalOrder.value = order
   evalForm.value = { score: 5, content: '' }
@@ -247,14 +251,14 @@ onMounted(load)
 <style scoped>
 .orders-section {
   background: #fff;
-  padding: 24px;
+  padding: 16px;
   border-radius: 8px;
-  margin-bottom: 16px;
-  font-size: 26px;
+  margin-bottom: 12px;
+  font-size: 14px;
 }
-.section-header { margin-bottom: 20px; }
+.section-header { margin-bottom: 14px; }
 .section-title {
-  font-size: 40px;
+  font-size: 20px;
   font-weight: 600;
   color: #303133;
   text-align: center;
@@ -265,11 +269,11 @@ onMounted(load)
   display: flex;
   gap: 0;
   border-bottom: 1px solid #e4e7ed;
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 .tab-item {
-  padding: 16px 28px;
-  font-size: 28px;
+  padding: 10px 20px;
+  font-size: 14px;
   color: #606266;
   cursor: pointer;
   position: relative;
@@ -282,45 +286,57 @@ onMounted(load)
 .tab-item.active::after {
   content: '';
   position: absolute;
-  left: 24px;
-  right: 24px;
+  left: 16px;
+  right: 16px;
   bottom: -1px;
   height: 2px;
   background: #f56c6c;
 }
 
-.order-list { min-height: 120px; }
-.order-empty { padding: 40px 0; }
+.order-list { min-height: 80px; }
+.order-empty { padding: 24px 0; }
 
 .order-card {
   border: 1px solid #ebeef5;
-  border-radius: 8px;
-  margin-bottom: 16px;
+  border-radius: 6px;
+  margin-bottom: 12px;
   overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.order-card:hover {
+  border-color: #b9dcff;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.12);
 }
 .order-card-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 10px 14px;
   background: #fafafa;
   border-bottom: 1px solid #ebeef5;
 }
-.order-time { font-size: 24px; color: #909399; }
-.order-status-wrap { display: flex; align-items: center; gap: 8px; }
-.order-status { font-size: 28px; color: #303133; }
-.delete-icon { cursor: pointer; color: #909399; font-size: 28px; }
+.order-time { font-size: 13px; color: #909399; }
+.order-status-wrap { display: flex; align-items: center; gap: 6px; }
+.order-status { font-size: 14px; color: #303133; }
+.delete-icon { cursor: pointer; color: #909399; font-size: 16px; }
 .delete-icon:hover { color: #f56c6c; }
 
-.order-card-body { padding: 20px; }
+.order-card-body { padding: 14px; }
 .order-item {
   display: flex;
-  gap: 20px;
-}
-.item-img {
-  width: 120px;
-  height: 120px;
+  gap: 14px;
+  cursor: pointer;
   border-radius: 6px;
+  padding: 6px;
+  margin: -6px;
+  transition: background 0.18s ease;
+}
+.order-item:hover { background: #f5f9ff; }
+.item-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 4px;
   overflow: hidden;
   background: #f5f7fa;
   flex-shrink: 0;
@@ -332,32 +348,33 @@ onMounted(load)
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 14px;
   color: #909399;
 }
 .item-info { flex: 1; min-width: 0; }
-.item-name { font-size: 30px; color: #303133; margin-bottom: 8px; }
-.item-spec { font-size: 24px; color: #909399; margin-bottom: 6px; }
-.item-price { font-size: 32px; color: #f56c6c; font-weight: 600; }
+.item-name { font-size: 14px; color: #303133; margin-bottom: 6px; }
+.order-item:hover .item-name { color: #409eff; }
+.item-spec { font-size: 13px; color: #909399; margin-bottom: 4px; }
+.item-price { font-size: 16px; color: #f56c6c; font-weight: 600; }
 
 .order-card-foot {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 10px 14px;
   border-top: 1px solid #f0f0f0;
   background: #fafafa;
 }
-.order-summary { font-size: 24px; color: #606266; }
-.order-summary em { color: #f56c6c; font-weight: 600; font-style: normal; margin-left: 4px; }
+.order-summary { font-size: 13px; color: #606266; }
+.order-summary em { color: #f56c6c; font-weight: 600; font-style: normal; margin-left: 3px; }
 .order-actions { flex-shrink: 0; }
 .order-actions :deep(.el-button) {
-  font-size: 24px;
-  padding: 12px 20px;
+  font-size: 13px;
+  padding: 6px 12px;
 }
 .order-actions :deep(.el-button.el-button--small) {
-  font-size: 24px !important;
-  padding: 12px 20px !important;
+  font-size: 13px !important;
+  padding: 6px 12px !important;
   height: auto !important;
 }
 </style>

@@ -73,6 +73,10 @@ export function myOrders(page = 0, size = 20) {
   return request.get<any, OrderItem[]>('/order/my', { params: { page, size } })
 }
 
+export function getOrderDetail(id: number) {
+  return request.get<any, OrderItem>(`/order/${id}`)
+}
+
 export function payOrder(id: number) {
   return request.post<any, OrderItem>(`/order/${id}/pay`)
 }

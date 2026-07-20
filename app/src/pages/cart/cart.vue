@@ -1,11 +1,26 @@
 <template>
   <view class="page">
+    <view class="custom-nav" :style="{ paddingTop: `${statusBarHeight}px` }">
+      <view class="nav-row">
+        <view class="nav-back" @click="goBack">‹</view>
+        <text class="nav-title">购物车</text>
+        <view class="nav-placeholder"></view>
+      </view>
+    </view>
+
     <view v-if="!store.token" class="empty-wrap">
       <text>请先登录后查看购物车</text>
       <button class="login-btn" @click="goLogin">去登录</button>
     </view>
 
-    <view v-else-if="!list.length && !loading" class="empty-wrap">购物车是空的</view>
+    <view v-else-if="!list.length && !loading" class="empty-wrap">
+      <text class="empty-title">购物车是空的</text>
+      <text class="empty-desc">可以先选择干洗服务，或去商城看看洗护用品。</text>
+      <view class="empty-actions">
+        <button class="ghost-btn" @click="goService">去干洗服务</button>
+        <button class="login-btn" @click="goProduct">去商城</button>
+      </view>
+    </view>
 
     <view v-else class="content">
       <view class="top-card">
@@ -29,8 +44,8 @@
           <text class="group-icon">▣</text>
           <text>干洗服务</text>
         </view>
-        <view v-for="item in serviceList" :key="item.id" class="cart-row">
-          <view class="select-dot" :class="{ active: selectedMap[item.id] }" @click="toggle(item.id)">
+        <view v-for="item in serviceList" :key="item.id" class="cart-row" @click="goCartItemDetail(item)">
+          <view class="select-dot" :class="{ active: selectedMap[item.id] }" @click.stop="toggle(item.id)">
             <text v-if="selectedMap[item.id]">✓</text>
           </view>
           <image v-if="imageOf(item.image)" class="item-img" :src="imageOf(item.image)" mode="aspectFill" />
@@ -44,13 +59,13 @@
               <text class="price">¥{{ money(item.price) }}</text>
             </view>
             <view class="qty-control">
-              <text class="qty-btn" @click="changeQty(item, -1)">−</text>
+              <text class="qty-btn" @click.stop="changeQty(item, -1)">−</text>
               <text class="qty-num">{{ item.quantity }}</text>
-              <text class="qty-btn" @click="changeQty(item, 1)">＋</text>
+              <text class="qty-btn" @click.stop="changeQty(item, 1)">＋</text>
             </view>
           </view>
           <view class="row-side">
-            <text class="delete" @click="remove(item.id)">删除</text>
+            <text class="delete" @click.stop="remove(item.id)">删除</text>
             <text class="times">× {{ item.quantity }}</text>
           </view>
         </view>
@@ -66,8 +81,9 @@
           :key="item.id"
           class="cart-row"
           :class="{ separated: index > 0 }"
+          @click="goCartItemDetail(item)"
         >
-          <view class="select-dot" :class="{ active: selectedMap[item.id] }" @click="toggle(item.id)">
+          <view class="select-dot" :class="{ active: selectedMap[item.id] }" @click.stop="toggle(item.id)">
             <text v-if="selectedMap[item.id]">✓</text>
           </view>
           <image v-if="imageOf(item.image)" class="item-img" :src="imageOf(item.image)" mode="aspectFill" />
@@ -78,13 +94,13 @@
               <text class="price">¥{{ money(item.price) }}</text>
             </view>
             <view class="qty-control">
-              <text class="qty-btn" @click="changeQty(item, -1)">−</text>
+              <text class="qty-btn" @click.stop="changeQty(item, -1)">−</text>
               <text class="qty-num">{{ item.quantity }}</text>
-              <text class="qty-btn" @click="changeQty(item, 1)">＋</text>
+              <text class="qty-btn" @click.stop="changeQty(item, 1)">＋</text>
             </view>
           </view>
           <view class="row-side">
-            <text class="delete" @click="remove(item.id)">删除</text>
+            <text class="delete" @click.stop="remove(item.id)">删除</text>
             <text class="times">× {{ item.quantity }}</text>
           </view>
         </view>
@@ -93,9 +109,18 @@
       <view class="remark-card">
         <view class="remark-main">
           <text class="remark-icon">▤</text>
-          <view>
+          <view class="remark-content">
             <text class="remark-title">备注</text>
-            <input v-model="remark" class="remark-input" placeholder="选填：请输入您的备注信息（如衣物特殊要求等）" />
+            <view class="remark-options">
+              <text
+                v-for="item in remarkOptions"
+                :key="item"
+                class="remark-tag"
+                :class="{ active: remarkSelected(item) }"
+                @click="toggleRemark(item)"
+              >{{ item }}</text>
+            </view>
+            <input v-model="remark" class="remark-input" placeholder="也可手动输入备注信息" />
           </view>
         </view>
         <text class="arrow small">›</text>
@@ -145,12 +170,12 @@
         </view>
       </view>
     </view>
-    <AiFloat />
+    <AiFloat :bottom-offset="178" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { getCartList, updateCartQuantity, removeCartItem, type CartItem } from '@/api/cart'
@@ -159,6 +184,7 @@ import { getStoreList, type StoreItem } from '@/api/store'
 import { fullAddress, resolveImageUrl } from '@/utils'
 
 const store = useUserStore()
+const statusBarHeight = uni.getSystemInfoSync().statusBarHeight || 0
 const list = ref<CartItem[]>([])
 const loading = ref(false)
 const selectedMap = reactive<Record<number, boolean>>({})
@@ -171,6 +197,16 @@ const selectedStoreAddress = ref('')
 const showAddressPicker = ref(false)
 const showStorePicker = ref(false)
 const remark = ref('')
+const remarkOptions = [
+  '衣物有污渍',
+  '轻柔清洗',
+  '深浅色分开',
+  '不要烘干',
+  '不要熨烫',
+  '需要加急',
+  '送回前联系',
+  '有贵重配饰',
+]
 
 const serviceList = computed(() => list.value.filter((i) => i.itemType === 'SERVICE'))
 const productList = computed(() => list.value.filter((i) => i.itemType === 'PRODUCT'))
@@ -206,10 +242,22 @@ function toggleAll() {
   list.value.forEach((i) => { selectedMap[i.id] = v })
 }
 function selectAddress(id: number) { selectedAddressId.value = id; showAddressPicker.value = false }
+function remarkSelected(text: string) { return remark.value.split('，').includes(text) }
+function toggleRemark(text: string) {
+  const parts = remark.value.split('，').map((item) => item.trim()).filter(Boolean)
+  const index = parts.indexOf(text)
+  if (index >= 0) {
+    parts.splice(index, 1)
+  } else {
+    parts.push(text)
+  }
+  remark.value = parts.join('，').slice(0, 100)
+}
 function selectStore(id: number, name: string) {
   selectedStoreId.value = id
   selectedStoreName.value = name
-  selectedStoreAddress.value = storeList.value.find((s) => s.id === id)?.address || ''
+  const store = storeList.value.find((s) => s.id === id)
+  selectedStoreAddress.value = store ? store.address || '' : ''
   showStorePicker.value = false
   uni.setStorageSync('selected_store', JSON.stringify({
     id,
@@ -252,6 +300,32 @@ function goNearbyStore() {
   uni.navigateTo({ url: '/pages/store/nearby?from=cart' })
 }
 
+function goBack() {
+  const pages = getCurrentPages()
+  if (pages.length > 1) {
+    uni.navigateBack()
+    return
+  }
+  uni.switchTab({ url: '/pages/index/index' })
+}
+
+function goService() { uni.switchTab({ url: '/pages/service/list' }) }
+function goProduct() { uni.switchTab({ url: '/pages/product/list' }) }
+
+function goCartItemDetail(item: CartItem) {
+  const id = item.itemType === 'SERVICE' ? item.serviceId : item.productId
+  if (!id) {
+    uni.showToast({ title: '商品信息不存在', icon: 'none' })
+    return
+  }
+  const base = item.itemType === 'SERVICE' ? '/pages/service/detail' : '/pages/product/detail'
+  let url = `${base}?id=${id}&cartId=${item.id}&quantity=${item.quantity}`
+  if (item.itemType === 'SERVICE' && item.serviceSpecName) {
+    url += `&specName=${encodeURIComponent(item.serviceSpecName)}`
+  }
+  uni.navigateTo({ url })
+}
+
 function goAddAddress() {
   showAddressPicker.value = false
   uni.navigateTo({ url: '/pages/profile/address' })
@@ -290,7 +364,6 @@ onShow(() => {
     }
   }).catch(() => {})
 })
-onMounted(load)
 
 function syncSelectedStore() {
   try {
@@ -308,10 +381,53 @@ function syncSelectedStore() {
 <style scoped lang="scss">
 .page {
   min-height: 100vh;
-  padding: 22rpx 30rpx 178rpx;
+  padding: 0 30rpx 158rpx;
   box-sizing: border-box;
   background: linear-gradient(180deg, #f7fbff 0%, #f8fafc 52%, #ffffff 100%);
   color: #111827;
+}
+
+.custom-nav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  margin: 0 -30rpx 22rpx;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12rpx);
+  border-bottom: 1rpx solid #eef2f7;
+}
+
+.nav-row {
+  height: 88rpx;
+  padding: 0 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-back,
+.nav-placeholder {
+  width: 72rpx;
+  height: 72rpx;
+  flex: 0 0 72rpx;
+}
+
+.nav-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111827;
+  font-size: 60rpx;
+  line-height: 1;
+}
+
+.nav-title {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  color: #111827;
+  font-size: 32rpx;
+  font-weight: 700;
 }
 
 .empty-wrap {
@@ -324,11 +440,45 @@ function syncSelectedStore() {
   font-size: 30rpx;
 }
 
-.login-btn {
+.empty-title {
+  color: #7b8494;
+  font-size: 30rpx;
+}
+
+.empty-desc {
+  width: 520rpx;
+  max-width: 100%;
+  color: #9aa4b2;
+  font-size: 26rpx;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.empty-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18rpx;
+  width: 100%;
+}
+
+.login-btn,
+.ghost-btn {
   width: 220rpx;
-  color: #fff;
+  height: 72rpx;
+  line-height: 72rpx;
   border-radius: 999rpx;
+  font-size: 28rpx;
+}
+
+.login-btn {
+  color: #fff;
   background: #2474ff;
+}
+
+.ghost-btn {
+  color: #2474ff;
+  background: #eef5ff;
 }
 
 .top-card,
@@ -490,6 +640,8 @@ function syncSelectedStore() {
 .item-main {
   flex: 1;
   min-width: 0;
+  padding-right: 96rpx;
+  box-sizing: border-box;
 }
 
 .name-line {
@@ -500,7 +652,7 @@ function syncSelectedStore() {
 }
 
 .item-name {
-  max-width: 300rpx;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -512,7 +664,7 @@ function syncSelectedStore() {
 .item-name.single {
   display: block;
   margin-bottom: 22rpx;
-  max-width: 360rpx;
+  max-width: 100%;
 }
 
 .spec-tag {
@@ -574,6 +726,7 @@ function syncSelectedStore() {
   right: 0;
   top: 22rpx;
   bottom: 58rpx;
+  width: 82rpx;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -582,7 +735,9 @@ function syncSelectedStore() {
 
 .delete {
   color: #ff1f1f;
-  font-size: 28rpx;
+  font-size: 24rpx;
+  line-height: 34rpx;
+  padding: 2rpx 0;
 }
 
 .times {
@@ -607,7 +762,7 @@ function syncSelectedStore() {
   padding: 24rpx 28rpx;
   border-radius: 20rpx;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   background: #fff;
   box-shadow: 0 14rpx 38rpx rgba(31, 89, 154, 0.08);
@@ -633,6 +788,35 @@ function syncSelectedStore() {
   flex-shrink: 0;
 }
 
+.remark-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.remark-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin: 14rpx 0 16rpx;
+}
+
+.remark-tag {
+  padding: 11rpx 16rpx;
+  border-radius: 999rpx;
+  color: #55708f;
+  background: #f1f6ff;
+  border: 1rpx solid #dce9ff;
+  font-size: 23rpx;
+  line-height: 1;
+}
+
+.remark-tag.active {
+  color: #fff;
+  background: linear-gradient(135deg, #3f9cff, #2474ff);
+  border-color: transparent;
+  box-shadow: 0 8rpx 18rpx rgba(36, 116, 255, 0.18);
+}
+
 .remark-input {
   width: 560rpx;
   height: 38rpx;
@@ -648,7 +832,7 @@ function syncSelectedStore() {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(100rpx + env(safe-area-inset-bottom));
+  bottom: 0;
   height: 118rpx;
   padding: 0 30rpx;
   display: flex;
@@ -657,7 +841,7 @@ function syncSelectedStore() {
   box-sizing: border-box;
   border-radius: 0;
   box-shadow: 0 -10rpx 30rpx rgba(31, 89, 154, 0.08);
-  z-index: 18;
+  z-index: 80;
 }
 
 .all-check {
@@ -699,7 +883,8 @@ function syncSelectedStore() {
 }
 
 .checkout-btn::after,
-.login-btn::after {
+.login-btn::after,
+.ghost-btn::after {
   border: 0;
 }
 

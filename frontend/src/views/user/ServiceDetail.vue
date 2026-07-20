@@ -1,6 +1,6 @@
 <template>
   <div class="service-detail-page">
-    <el-button link type="primary" @click="$router.push('/home/user/service')" class="back">← 返回干洗服务</el-button>
+    <el-button link type="primary" @click="goBack" class="back">← 返回</el-button>
 
     <div v-if="loading" class="loading">
       <el-icon class="is-loading">
@@ -19,19 +19,27 @@
         <h1 class="detail-name">{{ service.name }}</h1>
 
         <div class="detail-price">
-          <span>¥{{ minPrice }}/件</span>
+          <span>¥{{ unitPrice }}/件</span>
           <span v-if="parsedSpecs.length" class="price-rise">起</span>
         </div>
 
-        <div class="detail-cycle" v-if="service.cycle">预计洗护周期：{{ service.cycle }}</div>
+        <div v-if="service.cycle" class="detail-cycle">预计洗护周期：{{ service.cycle }}</div>
 
         <div v-if="parsedSpecs.length" class="detail-specs">
           <div class="label">规格（不同款不同价）</div>
-          <div class="spec-list">
-            <div v-for="s in parsedSpecs" :key="s.name" class="spec-item">
-              <span class="spec-name">{{ s.name }}</span>
-              <span class="spec-price">¥{{ s.price }}/件</span>
-            </div>
+          <el-radio-group v-model="selectedSpecName" class="spec-radio-group">
+            <el-radio v-for="s in parsedSpecs" :key="s.name" :label="s.name" class="spec-radio">
+              {{ s.name }} ¥{{ s.price }}/件
+            </el-radio>
+          </el-radio-group>
+        </div>
+
+        <div v-if="isFromCart" class="quantity-section">
+          <div class="label">数量</div>
+          <div class="quantity-wrap">
+            <button type="button" class="qty-btn" :disabled="quantity <= 1" @click="quantity = Math.max(1, quantity - 1)">−</button>
+            <span class="qty-num">{{ quantity }}</span>
+            <button type="button" class="qty-btn" :disabled="quantity >= 99" @click="quantity = Math.min(99, quantity + 1)">+</button>
           </div>
         </div>
 
@@ -40,7 +48,8 @@
         <CommentSection :target-type="'SERVICE'" :target-id="service.id" collapsed :preview-count="1" />
 
         <div class="detail-actions">
-          <el-button type="primary" size="large" @click="goOrder">立即预约</el-button>
+          <el-button v-if="isFromCart" type="primary" size="large" @click="updateCart">更新购物车</el-button>
+          <el-button v-else type="primary" size="large" @click="goOrder">立即预约</el-button>
         </div>
       </div>
     </div>
@@ -55,6 +64,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getServiceList } from '@/api/service'
+import { removeCartItem, addToCart } from '@/api/cart'
 import CommentSection from '@/components/CommentSection.vue'
 import type { ServiceItem as ServiceItemApi } from '@/api/service'
 
@@ -62,14 +72,16 @@ const route = useRoute()
 const router = useRouter()
 
 const serviceId = computed(() => Number(route.params.id))
+const cartId = computed(() => Number(route.query.cartId))
+const isFromCart = computed(() => cartId.value > 0)
 
 const loading = ref(true)
 const service = ref<ServiceItemApi | null>(null)
+const quantity = ref(1)
 
 type SpecOption = { name: string; price: number }
 function parseServiceSpecs(raw?: string): SpecOption[] {
   if (!raw?.trim()) return []
-  // 兼容 OrderCreate.vue 的写法：如 "长款|199,短款|149"
   return raw
     .split(/[;,，]/)
     .map((part) => part.trim())
@@ -84,12 +96,37 @@ function parseServiceSpecs(raw?: string): SpecOption[] {
 }
 
 const parsedSpecs = computed(() => parseServiceSpecs(service.value?.specs))
+const selectedSpecName = ref('')
 
-const minPrice = computed(() => {
+const unitPrice = computed(() => {
   const specs = parsedSpecs.value
-  if (specs.length) return Math.min(...specs.map((s) => s.price))
-  return service.value?.price ?? 0
+  if (!service.value) return 0
+  if (!specs.length) return Number(service.value.price) || 0
+  const hit = specs.find((s) => s.name === selectedSpecName.value)
+  return hit ? hit.price : specs[0].price
 })
+
+function syncSpecFromRoute() {
+  const specs = parsedSpecs.value
+  const q = route.query.specName
+  const fromQ = typeof q === 'string' ? decodeURIComponent(q).trim() : ''
+  if (specs.length) {
+    if (fromQ && specs.some((s) => s.name === fromQ)) {
+      selectedSpecName.value = fromQ
+    } else if (!selectedSpecName.value || !specs.some((s) => s.name === selectedSpecName.value)) {
+      selectedSpecName.value = specs[0].name
+    }
+  } else {
+    selectedSpecName.value = ''
+  }
+}
+
+function syncQuantityFromRoute() {
+  const q = route.query.quantity
+  if (typeof q === 'string') {
+    quantity.value = Math.max(1, Math.min(99, Number(q) || 1))
+  }
+}
 
 onMounted(async () => {
   const id = serviceId.value
@@ -98,6 +135,10 @@ onMounted(async () => {
   try {
     const list = await getServiceList()
     service.value = list.find((s) => s.id === id) || null
+    if (service.value) {
+      syncSpecFromRoute()
+      syncQuantityFromRoute()
+    }
   } catch (e: any) {
     ElMessage.error(e?.response?.data?.message || '加载服务详情失败')
   } finally {
@@ -105,17 +146,41 @@ onMounted(async () => {
   }
 })
 
+function goBack() {
+  if (isFromCart.value) {
+    router.push('/home/user/cart')
+  } else {
+    router.push('/home/user/service')
+  }
+}
+
 function goOrder() {
   if (!service.value) return
   const specs = parsedSpecs.value
-  const specName = specs.length ? specs[0].name : undefined
+  const specName = specs.length ? selectedSpecName.value : undefined
   router.push({
     path: '/home/user/order/create',
     query: {
       serviceId: String(service.value.id),
       ...(specName ? { specName } : {}),
+      quantity: String(quantity.value),
     },
   })
+}
+
+async function updateCart() {
+  if (!service.value || cartId.value <= 0) return
+  loading.value = true
+  try {
+    await removeCartItem(cartId.value)
+    await addToCart('SERVICE', undefined, service.value.id, quantity.value, selectedSpecName.value || undefined)
+    ElMessage.success('购物车已更新')
+    router.push('/home/user/cart')
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || '更新失败')
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -135,10 +200,37 @@ function goOrder() {
 .detail-desc { color: #606266; line-height: 1.6; margin: 16px 0; }
 .detail-specs { margin-bottom: 12px; }
 .label { font-size: 18px; color: #909399; margin-bottom: 8px; }
-.spec-list { display: flex; flex-direction: column; gap: 8px; }
-.spec-item { display: flex; justify-content: space-between; padding: 10px 12px; border: 1px solid #ebeef5; border-radius: 6px; }
-.spec-name { color: #606266; }
-.spec-price { color: #303133; font-weight: 600; }
+.spec-radio-group { display: flex; flex-direction: column; gap: 8px; }
+.spec-radio :deep(.el-radio) { margin-bottom: 8px; }
+.spec-radio :deep(.el-radio__label) { font-size: 16px; }
 .detail-actions { margin-top: 18px; }
-</style>
 
+.quantity-section { margin-bottom: 12px; }
+.quantity-wrap {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #ebeef5;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #FFF;
+}
+.qty-btn {
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: #f5f7fa;
+  color: #606266;
+  font-size: 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.qty-btn:hover:not(:disabled) { background: #ebeef5; }
+.qty-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.qty-num {
+  min-width: 48px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+  color: #303133;
+}
+</style>
